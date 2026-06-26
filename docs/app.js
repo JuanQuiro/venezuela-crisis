@@ -6,6 +6,7 @@
   let markers = { centros: [], colapsadas: [], riesgo: [], sismos: [] };
   let pendingLat = null, pendingLng = null;
   let allData = { centros_acopio: [], zonas_colapsadas: [], edificios_riesgo: [], reportes_sismos: [] };
+  let cifras = [];
 
   const FUENTES = { oficial:{label:'🏛 Gobierno/Oficial',color:'#3498db'}, organismo:{label:'🔬 Organismo Técnico',color:'#2ecc71'}, medio:{label:'📰 Medio',color:'#f39c12'}, ciudadano:{label:'👤 Ciudadano',color:'#95a5a6'}, otro:{label:'❓ Otra',color:'#7f8c8d'} };
   const CONFIABILIDAD = { alta:{label:'🟢 Alta',color:'#27ae60'}, media:{label:'🟡 Media',color:'#f39c12'}, baja:{label:'🔴 Baja',color:'#e74c3c'} };
@@ -13,14 +14,18 @@
   function initSB() { sb = window.supabaseClient.createClient(SUPABASE_URL, ANON_KEY); }
 
   async function loadAll() {
-    const [c,z,e,s] = await Promise.all(['centros_acopio','zonas_colapsadas','edificios_riesgo','reportes_sismos'].map(t => sb.from(t).select('*').order('id',{ascending:false})));
+    const [c,z,e,s,cf] = await Promise.all([
+      ...['centros_acopio','zonas_colapsadas','edificios_riesgo','reportes_sismos'].map(t => sb.from(t).select('*').order('id',{ascending:false})),
+      sb.from('cifras').select('*').order('prioridad',{ascending:true})
+    ]);
     allData.centros_acopio = c.data.reverse(); allData.zonas_colapsadas = z.data.reverse();
     allData.edificios_riesgo = e.data.reverse(); allData.reportes_sismos = s.data.reverse();
+    cifras = cf.data||[];
   }
 
   function subscribe() {
     const ch = sb.channel('venezuela-cambios');
-    ['centros_acopio','zonas_colapsadas','edificios_riesgo','reportes_sismos','denuncias'].forEach(t => {
+    ['centros_acopio','zonas_colapsadas','edificios_riesgo','reportes_sismos','denuncias','cifras'].forEach(t => {
       ch.on('postgres_changes', { event: '*', schema: 'public', table: t }, () => refresh());
     });
     ch.subscribe();
@@ -78,6 +83,7 @@
     sLayer.addTo(map); layers.sismos = sLayer;
 
     updateUI();
+    renderCifras();
   }
 
   function clearLayers() {
@@ -141,6 +147,13 @@
   }
 
   function statusL(s) { return ({ activo:'✅ Activo', colapsado:'💥 Colapsado', cerrado:'🔴 Cerrado', saturado:'⚠️ Saturado' })[s]||s; }
+
+  function renderCifras() {
+    const el = document.getElementById('crisisStatsInner');
+    if (!el) return;
+    if (!cifras.length) { el.innerHTML = '<div class="cifra-item"><span class="cifra-val">Cargando...</span></div>'; return; }
+    el.innerHTML = cifras.map(c => `<div class="cifra-item" title="${(c.descripcion||'')}${c.fuente?' | Fuente: '+c.fuente:''}"><span class="cifra-num">${c.valor}</span><span class="cifra-lbl">${c.etiqueta}</span></div>`).join('');
+  }
 
   function updateUI() {
     document.getElementById('statCentros').textContent = allData.centros_acopio.length;

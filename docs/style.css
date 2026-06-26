@@ -88,6 +88,51 @@ html, body {
 .badge-success { background: var(--success); color: #fff; }
 .badge-danger { background: var(--danger); color: #fff; }
 
+/* CRISIS STATS BAR */
+#crisisStats {
+  background: #1c1c3a;
+  border-bottom: 1px solid var(--border);
+  z-index: 500;
+  position: relative;
+  padding: 6px 0;
+}
+.stats-scroll {
+  display: flex;
+  gap: 0;
+  overflow-x: auto;
+  -webkit-overflow-scrolling: touch;
+  scroll-snap-type: x mandatory;
+  padding: 0 4px;
+}
+.stats-scroll::-webkit-scrollbar { height: 2px; }
+.stats-scroll::-webkit-scrollbar-thumb { background: var(--border); border-radius: 2px; }
+.cifra-item {
+  flex: 0 0 auto;
+  min-width: 100px;
+  scroll-snap-align: start;
+  text-align: center;
+  padding: 4px 12px;
+  border-right: 1px solid rgba(255,255,255,0.06);
+  cursor: default;
+}
+.cifra-item:last-child { border-right: none; }
+.cifra-num {
+  display: block;
+  font-size: 20px;
+  font-weight: 800;
+  color: var(--primary);
+  line-height: 1.2;
+}
+.cifra-lbl {
+  display: block;
+  font-size: 9px;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+  color: var(--text-muted);
+  white-space: nowrap;
+}
+.cifra-item:hover .cifra-num { color: #fff; }
+
 /* MAP */
 #map {
   flex: 1;
