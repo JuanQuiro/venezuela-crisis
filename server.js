@@ -10,7 +10,7 @@ app.use((req, res) => {
 });
 
 app.listen(PORT, '0.0.0.0', () => {
-  console.log(`\n  🆘 VENRES Crisis - Conectado a Supabase`);
+  console.log(`\n  🆘 VENEZUELA CRISIS - Conectado a Supabase`);
   console.log(`  ───────────────────────────────────────`);
   console.log(`  Local:  http://localhost:${PORT}`);
   console.log(`  Red:    http://192.168.1.3:${PORT}`);

@@ -19,7 +19,7 @@
   }
 
   function subscribe() {
-    const ch = sb.channel('venres-cambios');
+    const ch = sb.channel('venezuela-cambios');
     ['centros_acopio','zonas_colapsadas','edificios_riesgo','reportes_sismos','denuncias'].forEach(t => {
       ch.on('postgres_changes', { event: '*', schema: 'public', table: t }, () => refresh());
     });
@@ -28,7 +28,7 @@
 
   function initMap() {
     map = L.map('map', { center: [10.4800, -67.5000], zoom: 7, zoomControl: true });
-    L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', { attribution: '&copy; OSM | VENRES Crisis', maxZoom: 19 }).addTo(map);
+    L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', { attribution: '&copy; OSM | VENEZUELA CRISIS', maxZoom: 19 }).addTo(map);
     map.on('click', e => { pendingLat = e.latlng.lat; pendingLng = e.latlng.lng; });
   }
 

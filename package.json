@@ -1,5 +1,5 @@
 {
-  "name": "venres-crisis",
+  "name": "venezuela-crisis",
   "version": "1.0.0",
   "description": "Sistema de gestión de centros de acopio y evaluación de daños - Terremoto Venezuela",
   "main": "server.js",
