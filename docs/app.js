@@ -11,7 +11,7 @@
   const FUENTES = { oficial:{label:'🏛 Gobierno/Oficial',color:'#3498db'}, organismo:{label:'🔬 Organismo Técnico',color:'#2ecc71'}, medio:{label:'📰 Medio',color:'#f39c12'}, ciudadano:{label:'👤 Ciudadano',color:'#95a5a6'}, otro:{label:'❓ Otra',color:'#7f8c8d'} };
   const CONFIABILIDAD = { alta:{label:'🟢 Alta',color:'#27ae60'}, media:{label:'🟡 Media',color:'#f39c12'}, baja:{label:'🔴 Baja',color:'#e74c3c'} };
 
-  function initSB() { sb = window.supabaseClient.createClient(SUPABASE_URL, ANON_KEY); }
+  function initSB() { sb = window.supabase.createClient(SUPABASE_URL, ANON_KEY); }
 
   async function loadAll() {
     const [c,z,e,s,cf] = await Promise.all([
