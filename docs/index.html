@@ -64,47 +64,6 @@
   <!-- TAB: MAPA -->
   <div id="tab-mapa" class="tab-content active">
     <div id="map"></div>
-
-    <div id="sidebar" class="hidden">
-      <div id="sidebarHeader">
-        <h2>Panel de Crisis</h2>
-        <button id="closeSidebar" class="icon-btn">✕</button>
-      </div>
-      <div id="sidebarContent">
-        <p id="lastUpdated" style="font-size:11px;color:var(--text-muted);margin-bottom:10px"></p>
-        <div class="stat-grid">
-          <div class="stat-card"><span class="stat-num" id="statCentros">0</span><span>Centros</span></div>
-          <div class="stat-card"><span class="stat-num" id="statActivos">0</span><span>Activos</span></div>
-          <div class="stat-card"><span class="stat-num" id="statColapsadas">0</span><span>Zonas Colapsadas</span></div>
-          <div class="stat-card danger"><span class="stat-num" id="statRiesgo">0</span><span>Edificios Riesgo</span></div>
-        </div>
-        <h3>Filtros</h3>
-        <div class="filter-group">
-          <label class="filter-item"><input type="checkbox" id="filterCentros" checked><span>Centros de Acopio</span></label>
-          <label class="filter-item"><input type="checkbox" id="filterColapsadas" checked><span>Zonas Colapsadas</span></label>
-          <label class="filter-item"><input type="checkbox" id="filterRiesgo" checked><span>Edificios Riesgo</span></label>
-          <label class="filter-item"><input type="checkbox" id="filterSismos" checked><span>⚡ Sismos / Réplicas</span></label>
-          <label class="filter-item"><input type="checkbox" id="filterUSGS" checked><span>📡 USGS Tiempo Real</span></label>
-          <label class="filter-item"><input type="checkbox" id="filterFeed" checked><span>📰 Incidencias Feed</span></label>
-        </div>
-        <h3>Reportar</h3>
-        <div class="report-buttons">
-          <button class="btn btn-primary" id="reportCentro">📦 Nuevo Centro</button>
-          <button class="btn btn-danger" id="reportColapso">💥 Zona Colapsada</button>
-          <button class="btn btn-warning" id="reportRiesgo">⚠️ Edificio Riesgo</button>
-          <button class="btn btn-outline" id="reportSismo">⚡ Reportar Sismo</button>
-        </div>
-        <h3>Últimos Reportes</h3>
-        <div id="recentReports"><p style="color:var(--text-muted);font-size:12px">Cargando...</p></div>
-        <h3>Llamadas de Emergencia</h3>
-        <div class="emergency-contacts">
-          <a href="tel:911" class="contact-btn">911 Emergencias</a>
-          <a href="tel:0800-12345" class="contact-btn">0800-SUMATRA</a>
-          <a href="tel:0412-1234567" class="contact-btn">Protección Civil</a>
-        </div>
-      </div>
-    </div>
-
     <div id="floatingActions">
       <button id="fabAdd" class="fab fab-primary" title="Reportar">➕</button>
       <button id="fabLocate" class="fab fab-secondary" title="Mi ubicación">📍</button>
@@ -224,6 +183,47 @@
         <input type="text" id="chatAlias" placeholder="Alias" maxlength="20" autocomplete="off">
         <input type="text" id="chatInput" placeholder="Escribe un mensaje..." maxlength="500" autocomplete="off">
         <button id="chatSend" class="btn btn-primary" disabled>▶</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- SIDEBAR (outside tabs so it's always in DOM) -->
+  <div id="sidebar" class="hidden">
+    <div id="sidebarHeader">
+      <h2>Panel de Crisis</h2>
+      <button id="closeSidebar" class="icon-btn">✕</button>
+    </div>
+    <div id="sidebarContent">
+      <p id="lastUpdated" style="font-size:11px;color:var(--text-muted);margin-bottom:10px"></p>
+      <div class="stat-grid">
+        <div class="stat-card"><span class="stat-num" id="statCentros">0</span><span>Centros</span></div>
+        <div class="stat-card"><span class="stat-num" id="statActivos">0</span><span>Activos</span></div>
+        <div class="stat-card"><span class="stat-num" id="statColapsadas">0</span><span>Zonas Colapsadas</span></div>
+        <div class="stat-card danger"><span class="stat-num" id="statRiesgo">0</span><span>Edificios Riesgo</span></div>
+      </div>
+      <h3>Filtros</h3>
+      <div class="filter-group">
+        <label class="filter-item"><input type="checkbox" id="filterCentros" checked><span>Centros de Acopio</span></label>
+        <label class="filter-item"><input type="checkbox" id="filterColapsadas" checked><span>Zonas Colapsadas</span></label>
+        <label class="filter-item"><input type="checkbox" id="filterRiesgo" checked><span>Edificios Riesgo</span></label>
+        <label class="filter-item"><input type="checkbox" id="filterSismos" checked><span>⚡ Sismos / Réplicas</span></label>
+        <label class="filter-item"><input type="checkbox" id="filterUSGS" checked><span>📡 USGS Tiempo Real</span></label>
+        <label class="filter-item"><input type="checkbox" id="filterFeed" checked><span>📰 Incidencias Feed</span></label>
+      </div>
+      <h3>Reportar</h3>
+      <div class="report-buttons">
+        <button class="btn btn-primary" id="reportCentro">📦 Nuevo Centro</button>
+        <button class="btn btn-danger" id="reportColapso">💥 Zona Colapsada</button>
+        <button class="btn btn-warning" id="reportRiesgo">⚠️ Edificio Riesgo</button>
+        <button class="btn btn-outline" id="reportSismo">⚡ Reportar Sismo</button>
+      </div>
+      <h3>Últimos Reportes</h3>
+      <div id="recentReports"><p style="color:var(--text-muted);font-size:12px">Cargando...</p></div>
+      <h3>Llamadas de Emergencia</h3>
+      <div class="emergency-contacts">
+        <a href="tel:911" class="contact-btn">911 Emergencias</a>
+        <a href="tel:0800-12345" class="contact-btn">0800-SUMATRA</a>
+        <a href="tel:0412-1234567" class="contact-btn">Protección Civil</a>
       </div>
     </div>
   </div>

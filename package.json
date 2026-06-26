@@ -4,7 +4,12 @@
   "description": "Sistema de gestión de centros de acopio y evaluación de daños - Terremoto Venezuela",
   "main": "server.js",
   "scripts": {
-    "start": "node server.js"
+    "start": "node server.js",
+    "deploy": "vercel --prod --yes",
+    "icons": "node scripts/generate-icons.js",
+    "android:icons": "node android/scripts/copy-icons.js",
+    "android:build": "cd android && powershell -File build-apk.ps1",
+    "build:apk": "npm run android:icons && npm run android:build"
   },
   "keywords": [],
   "author": "",
