@@ -1,0 +1,172 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1.0,maximum-scale=1.0,user-scalable=no">
+<title>VENRES Crisis - Centros de Acopio</title>
+<link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
+<link rel="stylesheet" href="style.css" />
+</head>
+<body>
+<div id="app">
+  <div id="header">
+    <button id="menuBtn" class="icon-btn">☰</button>
+    <h1>VENRES</h1>
+    <span id="statusBadge" class="badge badge-warning">⚠️ CARGANDO...</span>
+    <span id="userCount" class="badge badge-success" style="display:none">👥 0</span>
+  </div>
+
+  <div id="sidebar" class="hidden">
+    <div id="sidebarHeader">
+      <h2>Panel de Crisis</h2>
+      <button id="closeSidebar" class="icon-btn">✕</button>
+    </div>
+    <div id="sidebarContent">
+      <p id="lastUpdated" style="font-size:11px;color:var(--text-muted);margin-bottom:10px"></p>
+
+      <div class="stat-grid">
+        <div class="stat-card"><span class="stat-num" id="statCentros">0</span><span>Centros</span></div>
+        <div class="stat-card"><span class="stat-num" id="statActivos">0</span><span>Activos</span></div>
+        <div class="stat-card"><span class="stat-num" id="statColapsadas">0</span><span>Zonas Colapsadas</span></div>
+        <div class="stat-card danger"><span class="stat-num" id="statRiesgo">0</span><span>Edificios Riesgo</span></div>
+      </div>
+
+      <h3>Filtros</h3>
+      <div class="filter-group">
+        <label class="filter-item"><input type="checkbox" id="filterCentros" checked><span>Centros de Acopio</span></label>
+        <label class="filter-item"><input type="checkbox" id="filterColapsadas" checked><span>Zonas Colapsadas</span></label>
+        <label class="filter-item"><input type="checkbox" id="filterRiesgo" checked><span>Edificios Riesgo</span></label>
+        <label class="filter-item"><input type="checkbox" id="filterSismos" checked><span>⚡ Sismos / Réplicas</span></label>
+      </div>
+
+      <h3>Reportar</h3>
+      <div class="report-buttons">
+        <button class="btn btn-primary" id="reportCentro">📦 Nuevo Centro</button>
+        <button class="btn btn-danger" id="reportColapso">💥 Zona Colapsada</button>
+        <button class="btn btn-warning" id="reportRiesgo">⚠️ Edificio Riesgo</button>
+        <button class="btn btn-outline" id="reportSismo">⚡ Reportar Sismo</button>
+      </div>
+
+      <h3>Últimos Reportes</h3>
+      <div id="recentReports">
+        <p style="color:var(--text-muted);font-size:12px">Cargando...</p>
+      </div>
+
+      <h3>Llamadas de Emergencia</h3>
+      <div class="emergency-contacts">
+        <a href="tel:911" class="contact-btn">911 Emergencias</a>
+        <a href="tel:0800-12345" class="contact-btn">0800-SUMATRA</a>
+        <a href="tel:0412-1234567" class="contact-btn">Protección Civil</a>
+      </div>
+    </div>
+  </div>
+
+  <div id="map"></div>
+
+  <div id="floatingActions">
+    <button id="fabAdd" class="fab fab-primary" title="Reportar">➕</button>
+    <button id="fabLocate" class="fab fab-secondary" title="Mi ubicación">📍</button>
+  </div>
+
+  <div id="reportModal" class="modal hidden">
+    <div class="modal-content">
+      <div class="modal-header">
+        <h2 id="modalTitle">Reportar</h2>
+        <button class="icon-btn" id="closeModal">✕</button>
+      </div>
+      <form id="reportForm">
+        <input type="hidden" id="fieldType">
+        <input type="hidden" id="fieldLat">
+        <input type="hidden" id="fieldLng">
+
+        <label>Tu nombre (opcional)</label>
+        <input type="text" id="fieldReportero" placeholder="Anónimo">
+
+        <label>Nombre / Lugar</label>
+        <input type="text" id="fieldNombre" required placeholder="Ej: Centro Comercial Sambil">
+
+        <label>Dirección / Referencia</label>
+        <input type="text" id="fieldDireccion" placeholder="Ej: Av. Libertador, Caracas">
+
+        <div id="extraFields"></div>
+
+        <label>Descripción</label>
+        <textarea id="fieldDescripcion" rows="3" placeholder="Describe la situación..."></textarea>
+
+        <label>Contacto (opcional)</label>
+        <input type="text" id="fieldContacto" placeholder="Teléfono o red social">
+
+        <label>🏷 Tipo de fuente</label>
+        <select id="fieldFuenteTipo">
+          <option value="ciudadano" selected>👤 Ciudadano</option>
+          <option value="medio">📰 Medio de Comunicación</option>
+          <option value="organismo">🔬 Organismo Técnico</option>
+          <option value="oficial">🏛 Gobierno/Oficial</option>
+          <option value="otro">❓ Otro</option>
+        </select>
+
+        <label>🎯 Confiabilidad del dato</label>
+        <select id="fieldConfiabilidad">
+          <option value="baja" selected>🔴 Baja — Testigo no verificado</option>
+          <option value="media">🟡 Media — Fuente confiable no oficial</option>
+          <option value="alta">🟢 Alta — Fuente oficial confirmada</option>
+        </select>
+
+        <button type="submit" class="btn btn-primary btn-block">✅ Reportar Ahora</button>
+      </form>
+      <p class="modal-note">Todos los reportes son visibles para todos al instante.</p>
+    </div>
+  </div>
+
+  <div id="detailModal" class="modal hidden">
+    <div class="modal-content">
+      <div class="modal-header">
+        <h2 id="detailTitle">Detalle</h2>
+        <button class="icon-btn" id="closeDetail">✕</button>
+      </div>
+      <div id="detailBody"></div>
+    </div>
+  </div>
+
+  <div id="denunciaModal" class="modal hidden">
+    <div class="modal-content">
+      <div class="modal-header">
+        <h2>🚨 Denunciar Reporte</h2>
+        <button class="icon-btn" id="closeDenuncia">✕</button>
+      </div>
+      <form id="denunciaForm">
+        <input type="hidden" id="denunciaType">
+        <input type="hidden" id="denunciaId">
+
+        <label>Tu nombre (opcional)</label>
+        <input type="text" id="fieldDenunciante" placeholder="Anónimo">
+
+        <label>Motivo de la denuncia</label>
+        <select id="fieldMotivo">
+          <option value="informacion_falsa">❌ Información falsa o engañosa</option>
+          <option value="ubicacion_incorrecta">📍 Ubicación incorrecta</option>
+          <option value="desactualizado">⏰ Dato desactualizado</option>
+          <option value="spam">📢 Spam o publicidad</option>
+          <option value="ofensivo">🚫 Contenido ofensivo</option>
+          <option value="duplicado">🔁 Reporte duplicado</option>
+          <option value="otro">❓ Otro</option>
+        </select>
+
+        <label>Descripción (opcional)</label>
+        <textarea id="fieldDenunciaDesc" rows="3" placeholder="Explícanos por qué este reporte no es confiable..."></textarea>
+
+        <div style="display:flex;gap:8px">
+          <button type="button" class="btn btn-outline btn-block" id="cancelDenuncia">Cancelar</button>
+          <button type="submit" class="btn btn-danger btn-block">🚨 Denunciar</button>
+        </div>
+      </form>
+      <p class="modal-note">Las denuncias son visibles para todos. 3+ denuncias marcan el reporte como cuestionable.</p>
+    </div>
+  </div>
+</div>
+
+<script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<script src="app.js"></script>
+</body>
+</html>
