@@ -3,7 +3,13 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width,initial-scale=1.0,maximum-scale=1.0,user-scalable=no">
-<title>VENEZUELA CRISIS - Centros de Acopio</title>
+<meta name="theme-color" content="#e74c3c">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="mobile-web-app-capable" content="yes">
+<link rel="manifest" href="/manifest.json">
+<link rel="apple-touch-icon" href="/icons/icon-192.png">
+<title>VENEZUELA CRISIS - Sismo 2026</title>
 <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
 <link rel="stylesheet" href="style.css" />
 </head>
@@ -16,59 +22,213 @@
     <span id="userCount" class="badge badge-success" style="display:none">👥 0</span>
   </div>
 
-  <div id="sidebar" class="hidden">
-    <div id="sidebarHeader">
-      <h2>Panel de Crisis</h2>
-      <button id="closeSidebar" class="icon-btn">✕</button>
-    </div>
-    <div id="sidebarContent">
-      <p id="lastUpdated" style="font-size:11px;color:var(--text-muted);margin-bottom:10px"></p>
-
-      <div class="stat-grid">
-        <div class="stat-card"><span class="stat-num" id="statCentros">0</span><span>Centros</span></div>
-        <div class="stat-card"><span class="stat-num" id="statActivos">0</span><span>Activos</span></div>
-        <div class="stat-card"><span class="stat-num" id="statColapsadas">0</span><span>Zonas Colapsadas</span></div>
-        <div class="stat-card danger"><span class="stat-num" id="statRiesgo">0</span><span>Edificios Riesgo</span></div>
-      </div>
-
-      <h3>Filtros</h3>
-      <div class="filter-group">
-        <label class="filter-item"><input type="checkbox" id="filterCentros" checked><span>Centros de Acopio</span></label>
-        <label class="filter-item"><input type="checkbox" id="filterColapsadas" checked><span>Zonas Colapsadas</span></label>
-        <label class="filter-item"><input type="checkbox" id="filterRiesgo" checked><span>Edificios Riesgo</span></label>
-        <label class="filter-item"><input type="checkbox" id="filterSismos" checked><span>⚡ Sismos / Réplicas</span></label>
-      </div>
-
-      <h3>Reportar</h3>
-      <div class="report-buttons">
-        <button class="btn btn-primary" id="reportCentro">📦 Nuevo Centro</button>
-        <button class="btn btn-danger" id="reportColapso">💥 Zona Colapsada</button>
-        <button class="btn btn-warning" id="reportRiesgo">⚠️ Edificio Riesgo</button>
-        <button class="btn btn-outline" id="reportSismo">⚡ Reportar Sismo</button>
-      </div>
-
-      <h3>Últimos Reportes</h3>
-      <div id="recentReports">
-        <p style="color:var(--text-muted);font-size:12px">Cargando...</p>
-      </div>
-
-      <h3>Llamadas de Emergencia</h3>
-      <div class="emergency-contacts">
-        <a href="tel:911" class="contact-btn">911 Emergencias</a>
-        <a href="tel:0800-12345" class="contact-btn">0800-SUMATRA</a>
-        <a href="tel:0412-1234567" class="contact-btn">Protección Civil</a>
-      </div>
-    </div>
-  </div>
-
   <div id="crisisStats"><div id="crisisStatsInner" class="stats-scroll"></div><div id="cifraUpdated"></div></div>
-  <div id="map"></div>
 
-  <div id="floatingActions">
-    <button id="fabAdd" class="fab fab-primary" title="Reportar">➕</button>
-    <button id="fabLocate" class="fab fab-secondary" title="Mi ubicación">📍</button>
+  <nav id="tabBar">
+    <button class="tab-btn" data-tab="feed">📰 INCIDENCIAS</button>
+    <button class="tab-btn active" data-tab="mapa">🗺️ MAPA</button>
+    <button class="tab-btn" data-tab="personas">👥 PERSONAS</button>
+    <button class="tab-btn" data-tab="sismos">🌋 SISMOS</button>
+    <button class="tab-btn" data-tab="chat">💬 CHAT</button>
+  </nav>
+
+  <!-- TAB: FEED -->
+  <div id="tab-feed" class="tab-content">
+    <div id="feedContainer">
+      <div id="feedFilters" class="feed-filters">
+        <div class="feed-filter-row">
+          <span class="feed-filter-label">⏱</span>
+          <button class="feed-filter feed-filter-time" data-time="ahora">Ahora</button>
+          <button class="feed-filter feed-filter-time" data-time="1h">1h</button>
+          <button class="feed-filter feed-filter-time active" data-time="24h">24h</button>
+          <button class="feed-filter feed-filter-time" data-time="todo">Todo</button>
+        </div>
+        <div class="feed-filter-row">
+          <span class="feed-filter-label">📂</span>
+          <button class="feed-filter feed-filter-cat active" data-cat="todas">Todas</button>
+          <button class="feed-filter feed-filter-cat" data-cat="sismo">🔴Sismo</button>
+          <button class="feed-filter feed-filter-cat" data-cat="ultimo_minuto">⚡Último Min</button>
+          <button class="feed-filter feed-filter-cat" data-cat="alerta">🚨Alerta</button>
+          <button class="feed-filter feed-filter-cat" data-cat="noticia">📰Noticia</button>
+          <button class="feed-filter feed-filter-cat" data-cat="desplazamiento">🚶Desplaz.</button>
+          <button class="feed-filter feed-filter-cat" data-cat="medicamentos">💊Medic.</button>
+        </div>
+      </div>
+      <div id="feedTimeline"><div class="feed-loading">Cargando incidencias...</div></div>
+      <div id="feedFab">
+        <button id="fabFeed" class="fab fab-primary" title="Nueva incidencia">📝</button>
+      </div>
+    </div>
   </div>
 
+  <!-- TAB: MAPA -->
+  <div id="tab-mapa" class="tab-content active">
+    <div id="map"></div>
+
+    <div id="sidebar" class="hidden">
+      <div id="sidebarHeader">
+        <h2>Panel de Crisis</h2>
+        <button id="closeSidebar" class="icon-btn">✕</button>
+      </div>
+      <div id="sidebarContent">
+        <p id="lastUpdated" style="font-size:11px;color:var(--text-muted);margin-bottom:10px"></p>
+        <div class="stat-grid">
+          <div class="stat-card"><span class="stat-num" id="statCentros">0</span><span>Centros</span></div>
+          <div class="stat-card"><span class="stat-num" id="statActivos">0</span><span>Activos</span></div>
+          <div class="stat-card"><span class="stat-num" id="statColapsadas">0</span><span>Zonas Colapsadas</span></div>
+          <div class="stat-card danger"><span class="stat-num" id="statRiesgo">0</span><span>Edificios Riesgo</span></div>
+        </div>
+        <h3>Filtros</h3>
+        <div class="filter-group">
+          <label class="filter-item"><input type="checkbox" id="filterCentros" checked><span>Centros de Acopio</span></label>
+          <label class="filter-item"><input type="checkbox" id="filterColapsadas" checked><span>Zonas Colapsadas</span></label>
+          <label class="filter-item"><input type="checkbox" id="filterRiesgo" checked><span>Edificios Riesgo</span></label>
+          <label class="filter-item"><input type="checkbox" id="filterSismos" checked><span>⚡ Sismos / Réplicas</span></label>
+          <label class="filter-item"><input type="checkbox" id="filterUSGS" checked><span>📡 USGS Tiempo Real</span></label>
+          <label class="filter-item"><input type="checkbox" id="filterFeed" checked><span>📰 Incidencias Feed</span></label>
+        </div>
+        <h3>Reportar</h3>
+        <div class="report-buttons">
+          <button class="btn btn-primary" id="reportCentro">📦 Nuevo Centro</button>
+          <button class="btn btn-danger" id="reportColapso">💥 Zona Colapsada</button>
+          <button class="btn btn-warning" id="reportRiesgo">⚠️ Edificio Riesgo</button>
+          <button class="btn btn-outline" id="reportSismo">⚡ Reportar Sismo</button>
+        </div>
+        <h3>Últimos Reportes</h3>
+        <div id="recentReports"><p style="color:var(--text-muted);font-size:12px">Cargando...</p></div>
+        <h3>Llamadas de Emergencia</h3>
+        <div class="emergency-contacts">
+          <a href="tel:911" class="contact-btn">911 Emergencias</a>
+          <a href="tel:0800-12345" class="contact-btn">0800-SUMATRA</a>
+          <a href="tel:0412-1234567" class="contact-btn">Protección Civil</a>
+        </div>
+      </div>
+    </div>
+
+    <div id="floatingActions">
+      <button id="fabAdd" class="fab fab-primary" title="Reportar">➕</button>
+      <button id="fabLocate" class="fab fab-secondary" title="Mi ubicación">📍</button>
+    </div>
+  </div>
+
+  <!-- TAB: PERSONAS -->
+  <div id="tab-personas" class="tab-content">
+    <div id="personasContainer">
+      <div class="personas-form">
+        <div class="personas-form-header" id="personasFormToggle">➕ Registrarme <span style="color:var(--text-muted);font-size:10px">— tocá para llenar</span></div>
+        <form id="personasForm" style="display:none">
+          <div class="pf-row">
+            <div class="pf-field" style="flex:1">
+              <label>Nombre</label>
+              <input type="text" id="pNombre" required placeholder="Tu nombre" maxlength="80">
+            </div>
+            <div class="pf-field" style="flex:0 0 auto">
+              <label>Foto</label>
+              <button type="button" id="pFotoBtn" class="btn btn-outline">📷</button>
+              <input type="file" id="pFotoInput" accept="image/*" capture="environment" style="display:none">
+            </div>
+          </div>
+          <div class="pf-field">
+            <label>Estado</label>
+            <select id="pStatus">
+              <option value="bien">✅ Estoy bien</option>
+              <option value="herido">🆘 Estoy herido/a — necesito ayuda</option>
+              <option value="buscando_familiares">🔍 Buscando familiares</option>
+              <option value="necesita_medicamentos">💊 Necesito medicamentos</option>
+              <option value="voluntario">🙋 Soy voluntario</option>
+            </select>
+          </div>
+          <div class="pf-row">
+            <div class="pf-field" style="flex:2">
+              <label>Ubicación</label>
+              <input type="text" id="pUbicacion" placeholder="¿Dónde estás?">
+            </div>
+            <div class="pf-field" style="flex:0 0 auto">
+              <label>&nbsp;</label>
+              <button type="button" id="pGpsBtn" class="btn btn-outline">📍</button>
+            </div>
+          </div>
+          <div class="pf-row">
+            <div class="pf-field" style="flex:1">
+              <label>Teléfono</label>
+              <input type="text" id="pTelefono" placeholder="0412-..." maxlength="20">
+            </div>
+            <div class="pf-field" style="flex:1">
+              <label>Necesito (coma)</label>
+              <input type="text" id="pNecesidades" placeholder="agua, comida, medicinas">
+            </div>
+          </div>
+          <div class="pf-field">
+            <label>Notas</label>
+            <textarea id="pNotas" rows="2" placeholder="Información adicional..." maxlength="500"></textarea>
+          </div>
+          <div id="pFotoPreview" style="display:none;margin-bottom:6px">
+            <img id="pFotoImg" style="max-width:100px;max-height:100px;border-radius:8px">
+            <button type="button" id="pFotoRemove" class="btn btn-outline" style="padding:6px 12px;font-size:12px">✕ Quitar</button>
+          </div>
+          <button type="submit" class="btn btn-primary btn-block">✅ Registrarme</button>
+          <p style="font-size:10px;color:var(--text-muted);margin-top:4px">Tu ubicación se usa para que tus familiares te encuentren.</p>
+        </form>
+      </div>
+
+      <div class="personas-toolbar">
+        <input type="text" id="personasSearch" placeholder="🔍 Buscar por nombre..." class="personas-search">
+        <div class="personas-status-filters">
+          <button class="ps-filter active" data-ps="todas">Todas</button>
+          <button class="ps-filter" data-ps="bien">✅ Bien</button>
+          <button class="ps-filter" data-ps="herido">🆘 Herido</button>
+          <button class="ps-filter" data-ps="buscando_familiares">🔍 Busca</button>
+          <button class="ps-filter" data-ps="necesita_medicamentos">💊 Medic</button>
+          <button class="ps-filter" data-ps="voluntario">🙋 Volunt</button>
+        </div>
+      </div>
+
+      <div id="personasList" class="personas-list">
+        <div class="feed-loading">Cargando personas...</div>
+      </div>
+    </div>
+  </div>
+
+  <!-- TAB: SISMOS -->
+  <div id="tab-sismos" class="tab-content">
+    <div id="sismosContainer">
+      <div class="sismos-toolbar">
+        <div class="feed-filter-row">
+          <span class="feed-filter-label">⏱</span>
+          <button class="feed-filter sismos-time-filter" data-st="ahora">Ahora</button>
+          <button class="feed-filter sismos-time-filter" data-st="1h">1h</button>
+          <button class="feed-filter sismos-time-filter active" data-st="24h">24h</button>
+          <button class="feed-filter sismos-time-filter" data-st="todo">Todo</button>
+        </div>
+        <div class="feed-filter-row">
+          <span class="feed-filter-label">📊</span>
+          <button class="feed-filter sismos-mag-filter active" data-sm="todas">Todas</button>
+          <button class="feed-filter sismos-mag-filter" data-sm="m2">M2.5+</button>
+          <button class="feed-filter sismos-mag-filter" data-sm="m4">M4+</button>
+          <button class="feed-filter sismos-mag-filter" data-sm="m5">M5+</button>
+        </div>
+      </div>
+      <div id="sismosTimeline"><div class="feed-loading">Cargando datos sísmicos...</div></div>
+      <div class="sismos-footer">
+        <span>📡 Datos: USGS / Funvisis / SGC · Actualiza cada 60s</span>
+      </div>
+    </div>
+  </div>
+
+  <!-- TAB: CHAT -->
+  <div id="tab-chat" class="tab-content">
+    <div id="chatContainer">
+      <div id="chatMessages"><div class="chat-loading">Cargando mensajes...</div></div>
+      <div id="chatTyping" style="display:none"><span class="typing-dots">✍️ Alguien está escribiendo</span></div>
+      <div id="chatInputBar">
+        <input type="text" id="chatAlias" placeholder="Alias" maxlength="20" autocomplete="off">
+        <input type="text" id="chatInput" placeholder="Escribe un mensaje..." maxlength="500" autocomplete="off">
+        <button id="chatSend" class="btn btn-primary" disabled>▶</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- MODALS -->
   <div id="reportModal" class="modal hidden">
     <div class="modal-content">
       <div class="modal-header">
@@ -76,92 +236,82 @@
         <button class="icon-btn" id="closeModal">✕</button>
       </div>
       <form id="reportForm">
-        <input type="hidden" id="fieldType">
-        <input type="hidden" id="fieldLat">
-        <input type="hidden" id="fieldLng">
-
-        <label>Tu nombre (opcional)</label>
-        <input type="text" id="fieldReportero" placeholder="Anónimo">
-
-        <label>Nombre / Lugar</label>
-        <input type="text" id="fieldNombre" required placeholder="Ej: Centro Comercial Sambil">
-
-        <label>Dirección / Referencia</label>
-        <input type="text" id="fieldDireccion" placeholder="Ej: Av. Libertador, Caracas">
-
+        <input type="hidden" id="fieldType"><input type="hidden" id="fieldLat"><input type="hidden" id="fieldLng">
+        <label>Tu nombre (opcional)</label><input type="text" id="fieldReportero" placeholder="Anónimo">
+        <label>Nombre / Lugar</label><input type="text" id="fieldNombre" required placeholder="Ej: Centro Comercial Sambil">
+        <label>Dirección / Referencia</label><input type="text" id="fieldDireccion" placeholder="Ej: Av. Libertador, Caracas">
         <div id="extraFields"></div>
-
-        <label>Descripción</label>
-        <textarea id="fieldDescripcion" rows="3" placeholder="Describe la situación..."></textarea>
-
-        <label>Contacto (opcional)</label>
-        <input type="text" id="fieldContacto" placeholder="Teléfono o red social">
-
-        <label>🏷 Tipo de fuente</label>
-        <select id="fieldFuenteTipo">
+        <label>Descripción</label><textarea id="fieldDescripcion" rows="3" placeholder="Describe la situación..."></textarea>
+        <label>Contacto (opcional)</label><input type="text" id="fieldContacto" placeholder="Teléfono o red social">
+        <label>🏷 Tipo de fuente</label><select id="fieldFuenteTipo">
           <option value="ciudadano" selected>👤 Ciudadano</option>
-          <option value="medio">📰 Medio de Comunicación</option>
-          <option value="organismo">🔬 Organismo Técnico</option>
-          <option value="oficial">🏛 Gobierno/Oficial</option>
-          <option value="otro">❓ Otro</option>
+          <option value="medio">📰 Medio</option><option value="organismo">🔬 Organismo</option>
+          <option value="oficial">🏛 Gobierno</option><option value="otro">❓ Otro</option>
         </select>
-
-        <label>🎯 Confiabilidad del dato</label>
-        <select id="fieldConfiabilidad">
-          <option value="baja" selected>🔴 Baja — Testigo no verificado</option>
-          <option value="media">🟡 Media — Fuente confiable no oficial</option>
-          <option value="alta">🟢 Alta — Fuente oficial confirmada</option>
+        <label>🎯 Confiabilidad</label><select id="fieldConfiabilidad">
+          <option value="baja" selected>🔴 Baja</option><option value="media">🟡 Media</option><option value="alta">🟢 Alta</option>
         </select>
-
         <button type="submit" class="btn btn-primary btn-block">✅ Reportar Ahora</button>
       </form>
       <p class="modal-note">Todos los reportes son visibles para todos al instante.</p>
     </div>
   </div>
 
-  <div id="detailModal" class="modal hidden">
+  <div id="feedModal" class="modal hidden">
     <div class="modal-content">
       <div class="modal-header">
-        <h2 id="detailTitle">Detalle</h2>
-        <button class="icon-btn" id="closeDetail">✕</button>
+        <h2>📰 Nueva Incidencia</h2>
+        <button class="icon-btn" id="closeFeedModal">✕</button>
       </div>
+      <form id="feedForm">
+        <label>Título</label><input type="text" id="feedTitulo" required placeholder="Ej: Nueva réplica sentida en..." maxlength="120">
+        <label>Categoría</label><select id="feedCategoria">
+          <option value="ultimo_minuto">⚡ Último Minuto</option><option value="alerta">🚨 Alerta</option>
+          <option value="noticia">📰 Noticia</option><option value="desplazamiento">🚶 Desplazamiento</option>
+          <option value="medicamentos">💊 Medicamentos</option>
+        </select>
+        <label>Descripción</label><textarea id="feedDescripcion" rows="4" placeholder="Describe lo que está pasando..." maxlength="2000"></textarea>
+        <label>Ubicación (opcional)</label><input type="text" id="feedUbicacion" placeholder="Ej: Caracas, Miranda">
+        <div style="font-size:11px;color:var(--text-muted);margin-top:-8px;margin-bottom:8px">Para coordenadas, usá 📍 en el mapa</div>
+        <label>🏷 Tipo de fuente</label><select id="feedFuenteTipo">
+          <option value="ciudadano" selected>👤 Ciudadano</option><option value="medio">📰 Medio</option>
+          <option value="organismo">🔬 Organismo</option><option value="oficial">🏛 Gobierno</option><option value="otro">❓ Otro</option>
+        </select>
+        <label>🎯 Confiabilidad</label><select id="feedConfiabilidad">
+          <option value="baja">🔴 Baja</option><option value="media" selected>🟡 Media</option><option value="alta">🟢 Alta</option>
+        </select>
+        <label>Reportado por</label><input type="text" id="feedReportadoPor" placeholder="Tu nombre o fuente" maxlength="60">
+        <button type="submit" class="btn btn-primary btn-block">📰 Publicar Incidencia</button>
+      </form>
+      <p class="modal-note">La incidencia aparece al instante en el feed y en el mapa.</p>
+    </div>
+  </div>
+
+  <div id="detailModal" class="modal hidden">
+    <div class="modal-content">
+      <div class="modal-header"><h2 id="detailTitle">Detalle</h2><button class="icon-btn" id="closeDetail">✕</button></div>
       <div id="detailBody"></div>
     </div>
   </div>
 
   <div id="denunciaModal" class="modal hidden">
     <div class="modal-content">
-      <div class="modal-header">
-        <h2>🚨 Denunciar Reporte</h2>
-        <button class="icon-btn" id="closeDenuncia">✕</button>
-      </div>
+      <div class="modal-header"><h2>🚨 Denunciar Reporte</h2><button class="icon-btn" id="closeDenuncia">✕</button></div>
       <form id="denunciaForm">
-        <input type="hidden" id="denunciaType">
-        <input type="hidden" id="denunciaId">
-
-        <label>Tu nombre (opcional)</label>
-        <input type="text" id="fieldDenunciante" placeholder="Anónimo">
-
-        <label>Motivo de la denuncia</label>
-        <select id="fieldMotivo">
-          <option value="informacion_falsa">❌ Información falsa o engañosa</option>
-          <option value="ubicacion_incorrecta">📍 Ubicación incorrecta</option>
-          <option value="desactualizado">⏰ Dato desactualizado</option>
-          <option value="spam">📢 Spam o publicidad</option>
-          <option value="ofensivo">🚫 Contenido ofensivo</option>
-          <option value="duplicado">🔁 Reporte duplicado</option>
-          <option value="otro">❓ Otro</option>
+        <input type="hidden" id="denunciaType"><input type="hidden" id="denunciaId">
+        <label>Tu nombre (opcional)</label><input type="text" id="fieldDenunciante" placeholder="Anónimo">
+        <label>Motivo</label><select id="fieldMotivo">
+          <option value="informacion_falsa">❌ Información falsa</option><option value="ubicacion_incorrecta">📍 Ubicación incorrecta</option>
+          <option value="desactualizado">⏰ Desactualizado</option><option value="spam">📢 Spam</option>
+          <option value="ofensivo">🚫 Ofensivo</option><option value="duplicado">🔁 Duplicado</option><option value="otro">❓ Otro</option>
         </select>
-
-        <label>Descripción (opcional)</label>
-        <textarea id="fieldDenunciaDesc" rows="3" placeholder="Explícanos por qué este reporte no es confiable..."></textarea>
-
+        <label>Descripción (opcional)</label><textarea id="fieldDenunciaDesc" rows="3" placeholder="Explícanos por qué..."></textarea>
         <div style="display:flex;gap:8px">
           <button type="button" class="btn btn-outline btn-block" id="cancelDenuncia">Cancelar</button>
           <button type="submit" class="btn btn-danger btn-block">🚨 Denunciar</button>
         </div>
       </form>
-      <p class="modal-note">Las denuncias son visibles para todos. 3+ denuncias marcan el reporte como cuestionable.</p>
+      <p class="modal-note">3+ denuncias marcan el reporte como cuestionable.</p>
     </div>
   </div>
 </div>

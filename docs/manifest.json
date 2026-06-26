@@ -1,0 +1,25 @@
+{
+  "name": "VENEZUELA CRISIS — Sismo 2026",
+  "short_name": "Vzla Crisis",
+  "description": "Sistema de gestión de centros de acopio y evaluación de daños - Terremoto Venezuela 2026. Reportes en tiempo real, mapa interactivo, feed de incidencias y chat de emergencia.",
+  "start_url": "/",
+  "display": "standalone",
+  "orientation": "portrait",
+  "background_color": "#1a1a2e",
+  "theme_color": "#e74c3c",
+  "lang": "es-VE",
+  "categories": ["emergency", "social", "utilities"],
+  "icons": [
+    { "src": "/icons/icon-192.png", "sizes": "192x192", "type": "image/png", "purpose": "any maskable" },
+    { "src": "/icons/icon-512.png", "sizes": "512x512", "type": "image/png", "purpose": "any maskable" }
+  ],
+  "screenshots": [],
+  "prefer_related_applications": false,
+  "related_applications": [],
+  "scope": "/",
+  "shortcuts": [
+    { "name": "Mapa", "short_name": "Mapa", "description": "Ver mapa de crisis", "url": "/#mapa", "icons": [{ "src": "/icons/icon-192.png", "sizes": "192x192" }] },
+    { "name": "Reportar", "short_name": "Reportar", "description": "Reportar una incidencia", "url": "/#reportar", "icons": [{ "src": "/icons/icon-192.png", "sizes": "192x192" }] },
+    { "name": "Chat", "short_name": "Chat", "description": "Chat de emergencia", "url": "/#chat", "icons": [{ "src": "/icons/icon-192.png", "sizes": "192x192" }] }
+  ]
+}
