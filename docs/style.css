@@ -132,6 +132,20 @@ html, body {
   white-space: nowrap;
 }
 .cifra-item:hover .cifra-num { color: #fff; }
+.cifra-item.ultimo-sismo { background: rgba(231,76,60,0.15); }
+.cifra-item.ultimo-sismo .cifra-num { color: #ff4444; animation: pulse-sismo 1.5s ease-in-out infinite; }
+.cifra-item.ultimo-sismo .cifra-lbl { color: #ff6666; }
+@keyframes pulse-sismo {
+  0%, 100% { transform: scale(1); opacity: 1; }
+  50% { transform: scale(1.15); opacity: 0.8; }
+}
+#cifraUpdated {
+  text-align: center;
+  font-size: 9px;
+  color: var(--text-muted);
+  padding: 2px 8px 0;
+  letter-spacing: 0.3px;
+}
 
 /* MAP */
 #map {

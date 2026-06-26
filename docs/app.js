@@ -152,7 +152,13 @@
     const el = document.getElementById('crisisStatsInner');
     if (!el) return;
     if (!cifras.length) { el.innerHTML = '<div class="cifra-item"><span class="cifra-val">Cargando...</span></div>'; return; }
-    el.innerHTML = cifras.map(c => `<div class="cifra-item" title="${(c.descripcion||'')}${c.fuente?' | Fuente: '+c.fuente:''}"><span class="cifra-num">${c.valor}</span><span class="cifra-lbl">${c.etiqueta}</span></div>`).join('');
+    const now = new Date();
+    const timeStr = now.toLocaleTimeString('es-VE', {hour:'2-digit',minute:'2-digit'});
+    el.innerHTML = cifras.map(c => {
+      const cls = c.clave === 'ultimo_sismo' ? 'cifra-item ultimo-sismo' : 'cifra-item';
+      return `<div class="${cls}" title="${(c.descripcion||'')}${c.fuente?' | Fuente: '+c.fuente:''}"><span class="cifra-num">${c.valor}</span><span class="cifra-lbl">${c.etiqueta}</span></div>`;
+    }).join('');
+    document.getElementById('cifraUpdated').textContent = `🕐 ${timeStr}`;
   }
 
   function updateUI() {
