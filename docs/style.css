@@ -203,6 +203,23 @@ html, body { height: 100%; font-family: -apple-system,BlinkMacSystemFont,'Segoe 
 #sismosTimeline { flex: 1; overflow-y: auto; padding: 10px; display: flex; flex-direction: column; gap: 10px; -webkit-overflow-scrolling: touch; }
 .sismos-footer { flex-shrink: 0; text-align: center; padding: 8px; font-size: 11px; color: var(--text-muted); border-top: 1px solid var(--border); background: var(--bg); }
 
+/* ========== AYUDA TAB ========== */
+#ayudaContainer { display: flex; flex-direction: column; height: 100%; overflow: hidden; }
+#ayudaGrid { flex-shrink: 0; display: grid; grid-template-columns: 1fr 1fr; gap: 8px; padding: 10px; }
+.ayuda-card { display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 6px; padding: 16px 8px; background: var(--bg-card); border: 2px solid var(--border); border-radius: var(--radius-sm); color: var(--text); font-size: 11px; font-weight: 600; cursor: pointer; transition: all 0.15s; position: relative; min-height: 90px; font-family: inherit; }
+.ayuda-card:active { transform: scale(0.96); border-color: var(--primary); background: #1c2a4a; }
+.ayuda-card-icon { font-size: 28px; line-height: 1; }
+.ayuda-card-label { font-size: 12px; text-align: center; }
+.ayuda-card-count { position: absolute; top: 6px; right: 6px; background: var(--primary); color: #fff; border-radius: 50%; width: 24px; height: 24px; font-size: 11px; display: flex; align-items: center; justify-content: center; font-weight: 800; }
+#ayudaFilters { flex-shrink: 0; padding: 6px 10px; border-bottom: 1px solid var(--border); display: flex; gap: 6px; overflow-x: auto; -webkit-overflow-scrolling: touch; }
+#ayudaFilters::-webkit-scrollbar { height: 0; }
+#ayudaList { flex: 1; overflow-y: auto; padding: 10px; display: flex; flex-direction: column; gap: 8px; -webkit-overflow-scrolling: touch; }
+.ayuda-card-item { background: var(--bg-card); border-radius: var(--radius-sm); padding: 12px 14px; cursor: default; }
+.ayuda-card-item.rescatado, .ayuda-card-item.cubierta { opacity: 0.6; }
+.ayuda-card-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 5px; }
+.ayuda-card-title { font-size: 15px; font-weight: 700; margin-bottom: 4px; }
+.ayuda-card-desc { font-size: 13px; color: var(--text-muted); line-height: 1.4; margin-bottom: 2px; }
+
 /* ========== RESPONSIVE TWEAKS ========== */
 @media (min-width: 768px) {
   .modal { align-items: center; }

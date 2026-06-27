@@ -23,11 +23,145 @@
   let personasSearchQuery = '';
   let sismosTime = '24h';
   let sismosMag = 'todas';
+  let ayudaData = { atrapadas: [], hospitales: [], ninos: [], necesidades: [], mascotas: [], ayudantes: [] };
+  let ayudaFilter = 'todas';
+  let ayudaSubs = [];
 
   const FUENTES = { oficial:{label:'🏛 Gobierno/Oficial',color:'#3498db'}, organismo:{label:'🔬 Organismo Técnico',color:'#2ecc71'}, medio:{label:'📰 Medio',color:'#f39c12'}, ciudadano:{label:'👤 Ciudadano',color:'#95a5a6'}, otro:{label:'❓ Otra',color:'#7f8c8d'} };
   const CONFIABILIDAD = { alta:{label:'🟢 Alta',color:'#27ae60'}, media:{label:'🟡 Media',color:'#f39c12'}, baja:{label:'🔴 Baja',color:'#e74c3c'} };
   const CATS = { ultimo_minuto:{label:'⚡Último Min',color:'#9b59b6'}, alerta:{label:'🚨Alerta',color:'#e74c3c'}, noticia:{label:'📰Noticia',color:'#3498db'}, desplazamiento:{label:'🚶Desplaz.',color:'#e67e22'}, medicamentos:{label:'💊Medic.',color:'#27ae60'}, sismo:{label:'🔴Sismo',color:'#ff4444'} };
   const STATUS_PERSONA = { bien:{label:'✅ Bien',color:'#27ae60'}, herido:{label:'🆘 Herido',color:'#e74c3c'}, buscando_familiares:{label:'🔍 Busca familiares',color:'#f39c12'}, necesita_medicamentos:{label:'💊 Necesita medic.',color:'#9b59b6'}, voluntario:{label:'🙋 Voluntario',color:'#3498db'}, fallecido:{label:'💔 Fallecido',color:'#7f8c8d'} };
+  const AYUDA_TABLES = ['atrapadas','hospitales','ninos','necesidades','mascotas','ayudantes'];
+  const AYUDA_CONFIG = {
+    atrapadas: {
+      label: '🆘 Personas Atrapadas', icon: '🆘', table: 'personas_atrapadas',
+      fields: (d) => `
+<label>📍 Ubicación / Dirección</label><input type="text" id="af_ubicacion" required placeholder="Ej: Esquina de San Juan, Caracas">
+<label>👥 ¿Cuántas personas?</label><input type="number" id="af_cuantas" value="1" min="1" max="200">
+<label>🏗️ Tipo de estructura</label><select id="af_estructura"><option value="edificio">Edificio</option><option value="casa">Casa</option><option value="comercio">Comercio</option><option value="escombro">Bajo escombros</option><option value="otro">Otro</option></select>
+<label>🔴 Prioridad</label><select id="af_prioridad"><option value="alta">🔴 Alta</option><option value="media" selected>🟡 Media</option><option value="baja">🟢 Baja</option></select>
+<label>📞 Contacto</label><input type="text" id="af_contacto" placeholder="Teléfono de quien reporta">
+<label>📝 Notas</label><textarea id="af_notas" rows="2" placeholder="Estado, acceso, tipo de ayuda necesaria..."></textarea>
+<label>Reportado por</label><input type="text" id="af_reportante" placeholder="Tu nombre" value="Anónimo">`,
+      render: (d) => {
+        const p = d.prioridad||'media'; const col = p==='alta'?'#e74c3c':p==='media'?'#f39c12':'#27ae60';
+        return `<div class="ayuda-card-item atrapada ${d.rescatado?'rescatado':''}" style="border-left:4px solid ${col}">
+          <div class="ayuda-card-header"><span class="feed-cat" style="background:${col}22;color:${col}">${p==='alta'?'🔴':p==='media'?'🟡':'🟢'} ${d.prioridad||'Media'}</span><span class="feed-time">${timeAgo(d.created_at)}</span></div>
+          <div class="ayuda-card-title">🆘 ${d.cuantas_personas||'?'} persona(s) atrapada(s)</div>
+          <div class="ayuda-card-desc">📍 ${d.ubicacion||'Sin ubicación'}${d.tipo_estructura?' · 🏗️ '+d.tipo_estructura:''}${d.rescatado?'<br><strong style="color:#27ae60">✅ Rescatado</strong>':''}</div>
+          <div class="feed-card-footer">${d.contacto?'📞 '+d.contacto:''}${d.reportado_por?' · 👤 '+d.reportado_por:''}</div>
+          ${!d.rescatado?`<button class="btn btn-success" style="padding:6px 10px;font-size:11px;margin-top:6px" onclick="app.rescatar('atrapadas',${d.id})">✅ Marcar rescatado</button>`:''}
+        </div>`;
+      }
+    },
+    hospitales: {
+      label: '🏥 En Hospitales', icon: '🏥', table: 'en_hospitales',
+      fields: (o) => `
+<label>👤 Nombre de la persona</label><input type="text" id="af_nombre" required placeholder="Nombre completo">
+<label>🏥 Hospital</label><input type="text" id="af_hospital" placeholder="Ej: Hospital Pérez de León">
+<label>🩺 Estado</label><select id="af_estado"><option value="ingresado">🏥 Ingresado</option><option value="uci">🆘 UCI / Cuidados intensivos</option><option value="alta">✅ Dado de alta</option><option value="fallecido">💔 Fallecido</option></select>
+<label>📞 Teléfono / Contacto</label><input type="text" id="af_telefono" placeholder="Teléfono de la persona o familiar">
+<label>📝 Notas</label><textarea id="af_notas" rows="2" placeholder="Estado de salud, necesitan algo..."></textarea>
+<label>Reportado por</label><input type="text" id="af_reportante" placeholder="Tu nombre" value="Anónimo">`,
+      render: (d) => {
+        const estados = {ingresado:{c:'#3498db',l:'🏥 Ingresado'},uci:{c:'#e74c3c',l:'🆘 UCI'},alta:{c:'#27ae60',l:'✅ Alta'},fallecido:{c:'#7f8c8d',l:'💔 Fallecido'}};
+        const e = estados[d.estado]||estados.ingresado;
+        return `<div class="ayuda-card-item hospital" style="border-left:4px solid ${e.c}">
+          <div class="ayuda-card-header"><span class="feed-cat" style="background:${e.c}22;color:${e.c}">${e.l}</span><span class="feed-time">${timeAgo(d.created_at)}</span></div>
+          <div class="ayuda-card-title">👤 ${d.nombre||'?'}</div>
+          <div class="ayuda-card-desc">🏥 ${d.hospital||'Sin hospital'}${d.telefono?' · 📞 '+d.telefono:''}</div>
+          ${d.notas?`<div class="ayuda-card-desc" style="color:var(--text-muted);font-style:italic">${d.notas}</div>`:''}
+          <div class="feed-card-footer">👤 ${d.reportado_por||'Anónimo'}</div>
+        </div>`;
+      }
+    },
+    ninos: {
+      label: '👶 Niños Solos', icon: '👶', table: 'ninos_solos',
+      fields: (o) => `
+<label>👤 Nombre (aproximado)</label><input type="text" id="af_nombre" placeholder="Ej: 'Niño de camisa roja' o nombre si se sabe">
+<label>🎂 Edad aproximada</label><input type="text" id="af_edad" placeholder="Ej: 5 años, o 'bebé', 'adolescente'">
+<label>🚻 Sexo</label><select id="af_sexo"><option value="">No especifica</option><option value="varón">Varón</option><option value="mujer">Mujer</option></select>
+<label>📝 Descripción</label><textarea id="af_descripcion" rows="2" placeholder="Ropa, señas particulares, estado..."></textarea>
+<label>📍 Dónde está resguardado</label><input type="text" id="af_ubicacion" placeholder="Ej: Casa de la Sra. María, El Cafetal">
+<label>👤 Quién lo tiene</label><input type="text" id="af_quien" placeholder="Nombre de quien lo resguarda">
+<label>📞 Teléfono de contacto</label><input type="text" id="af_telefono" placeholder="Teléfono del resguardante">
+<label>Reportado por</label><input type="text" id="af_reportante" placeholder="Tu nombre" value="Anónimo">`,
+      render: (d) => {
+        const col = d.estado==='reunificado'?'#27ae60':d.estado==='en_proceso'?'#f39c12':'#e74c3c';
+        return `<div class="ayuda-card-item nino" style="border-left:4px solid ${col}">
+          <div class="ayuda-card-header"><span class="feed-cat" style="background:${col}22;color:${col}">${d.estado==='reunificado'?'✅ Reunificado':d.estado==='en_proceso'?'🔄 En proceso':'🔴 Resguardado'}</span><span class="feed-time">${timeAgo(d.created_at)}</span></div>
+          <div class="ayuda-card-title">👶 ${d.nombre_aproximado||'Nombre no disponible'}</div>
+          <div class="ayuda-card-desc">${d.edad_aproximada?'🎂 '+d.edad_aproximada:''}${d.sexo?' · '+d.sexo:''}${d.descripcion?'<br>📝 '+d.descripcion:''}</div>
+          <div class="ayuda-card-desc">📍 ${d.ubicacion||'Sin ubicación'}</div>
+          ${d.quien_lo_tiene?`<div class="ayuda-card-desc">👤 Resguardo: ${d.quien_lo_tiene}${d.telefono_contacto?' · 📞 '+d.telefono_contacto:''}</div>`:''}
+          <div class="feed-card-footer">👤 ${d.reportado_por||'Anónimo'}</div>
+          ${d.estado!=='reunificado'?`<button class="btn btn-success" style="padding:6px 10px;font-size:11px;margin-top:6px" onclick="app.reunificar(${d.id})">✅ Marcar reunificado</button>`:''}
+        </div>`;
+      }
+    },
+    necesidades: {
+      label: '💊 Necesidades', icon: '💊', table: 'necesidades',
+      fields: (o) => `
+<label>💊 Tipo de necesidad</label><select id="af_tipo"><option value="medicinas">💊 Medicinas</option><option value="agua">🚰 Agua</option><option value="comida">🍲 Comida</option><option value="oxigeno">🫁 Oxígeno</option><option value="ropa">👕 Ropa</option><option value="pañales">👶 Pañales</option><option value="higiene">🧴 Higiene</option><option value="otro">❓ Otro</option></select>
+<label>📝 Descripción</label><textarea id="af_descripcion" rows="2" placeholder="¿Qué se necesita? ¿Cantidad? ¿Urgente?"></textarea>
+<label>🔴 Prioridad</label><select id="af_prioridad"><option value="alta">🔴 Alta (urge)</option><option value="media" selected>🟡 Media</option><option value="baja">🟢 Baja</option></select>
+<label>📍 Dónde se necesita</label><input type="text" id="af_ubicacion" placeholder="Ej: Ambulatorio Altamira">
+<label>📞 Contacto</label><input type="text" id="af_contacto" placeholder="Quién recibe / teléfono">
+<label>Reportado por</label><input type="text" id="af_reportante" placeholder="Tu nombre" value="Anónimo">`,
+      render: (d) => {
+        const col = d.prioridad==='alta'?'#e74c3c':d.prioridad==='media'?'#f39c12':'#27ae60';
+        return `<div class="ayuda-card-item necesidad ${d.cubierta?'cubierta':''}" style="border-left:4px solid ${col}">
+          <div class="ayuda-card-header"><span class="feed-cat" style="background:${col}22;color:${col}">${d.prioridad==='alta'?'🔴':d.prioridad==='media'?'🟡':'🟢'} ${d.prioridad||'Media'}</span><span class="feed-time">${timeAgo(d.created_at)}</span></div>
+          <div class="ayuda-card-title">💊 ${d.tipo||'?'}</div>
+          ${d.descripcion?`<div class="ayuda-card-desc">${d.descripcion}</div>`:''}
+          <div class="ayuda-card-desc">📍 ${d.ubicacion||'Sin ubicación'}</div>
+          <div class="feed-card-footer">${d.contacto?'📞 '+d.contacto:''}${d.reportado_por?' · 👤 '+d.reportado_por:''}${d.cubierta?'<strong style="color:#27ae60"> · ✅ Cubierta</strong>':''}</div>
+          ${!d.cubierta?`<button class="btn btn-success" style="padding:6px 10px;font-size:11px;margin-top:6px" onclick="app.cubrir(${d.id})">✅ Marcar como cubierta</button>`:''}
+        </div>`;
+      }
+    },
+    mascotas: {
+      label: '🐾 Mascotas', icon: '🐾', table: 'mascotas',
+      fields: (o) => `
+<label>🐾 Tipo</label><select id="af_tipo"><option value="perro">🐕 Perro</option><option value="gato">🐈 Gato</option><option value="otro">🐹 Otro</option></select>
+<label>🏷️ Estado</label><select id="af_estado"><option value="perdida">🔍 Perdida</option><option value="encontrada">🙌 Encontrada</option><option value="rescatada">🆘 Rescatada</option></select>
+<label>📛 Nombre (si se sabe)</label><input type="text" id="af_nombre" placeholder="Nombre de la mascota">
+<label>📝 Descripción</label><textarea id="af_descripcion" rows="2" placeholder="Raza, color, tamaño, señas..."></textarea>
+<label>📍 Ubicación</label><input type="text" id="af_ubicacion" placeholder="Dónde se vio / dónde está">
+<label>📞 Contacto</label><input type="text" id="af_contacto" placeholder="Tu teléfono">
+<label>Reportado por</label><input type="text" id="af_reportante" placeholder="Tu nombre" value="Anónimo">`,
+      render: (d) => {
+        const col = d.estado==='perdida'?'#e74c3c':d.estado==='encontrada'?'#27ae60':'#f39c12';
+        return `<div class="ayuda-card-item mascota" style="border-left:4px solid ${col}">
+          <div class="ayuda-card-header"><span class="feed-cat" style="background:${col}22;color:${col}">${d.estado==='perdida'?'🔍 Perdida':d.estado==='encontrada'?'🙌 Encontrada':'🆘 Rescatada'}</span><span class="feed-time">${timeAgo(d.created_at)}</span></div>
+          <div class="ayuda-card-title">${d.tipo==='perro'?'🐕':d.tipo==='gato'?'🐈':'🐹'} ${d.nombre||(d.tipo==='perro'?'Perro':d.tipo==='gato'?'Gato':'Mascota')}</div>
+          ${d.descripcion?`<div class="ayuda-card-desc">${d.descripcion}</div>`:''}
+          <div class="ayuda-card-desc">📍 ${d.ubicacion||'Sin ubicación'}</div>
+          <div class="feed-card-footer">${d.contacto?'📞 '+d.contacto:''}${d.reportado_por?' · 👤 '+d.reportado_por:''}</div>
+        </div>`;
+      }
+    },
+    ayudantes: {
+      label: '🙋 Ayudantes/Voluntarios', icon: '🙋', table: 'ayudantes',
+      fields: (o) => `
+<label>👤 Tu nombre</label><input type="text" id="af_nombre" required placeholder="Nombre completo">
+<label>📞 Teléfono</label><input type="text" id="af_telefono" required placeholder="0412-...">
+<label>🔧 Tipo de ayuda</label><select id="af_tipo"><option value="medico">🏥 Médico / Enfermero</option><option value="rescatista">🆘 Rescatista</option><option value="conductor">🚗 Conductor / Transporte</option><option value="cocinero">🍲 Cocina / Alimentos</option><option value="albergue">🏠 Ofrezco albergue</option><option value="traduccion">🌐 Traducción / Comunicaciones</option><option value="carga">📦 Acopio / Carga</option><option value="otro">❓ Otro</option></select>
+<label>📍 Zona / Ubicación</label><input type="text" id="af_ubicacion" placeholder="¿Dónde estás o dónde puedes ayudar?">
+<label>📝 Notas</label><textarea id="af_notas" rows="2" placeholder="Disponibilidad horaria, herramientas, vehículo..."></textarea>
+<label>Reportado por</label><input type="text" id="af_reportante" placeholder="Tu nombre" value="Anónimo">`,
+      render: (d) => {
+        return `<div class="ayuda-card-item ayudante" style="border-left:4px solid #3498db">
+          <div class="ayuda-card-header"><span class="feed-cat" style="background:#3498db22;color:#3498db">${d.disponible?'✅ Disponible':'⏰ No disponible'}</span><span class="feed-time">${timeAgo(d.created_at)}</span></div>
+          <div class="ayuda-card-title">🙋 ${d.nombre||'?'}</div>
+          <div class="ayuda-card-desc">🔧 ${d.tipo||'No especifica'}${d.telefono?' · 📞 '+d.telefono:''}</div>
+          ${d.ubicacion?`<div class="ayuda-card-desc">📍 ${d.ubicacion}</div>`:''}
+          ${d.notas?`<div class="ayuda-card-desc" style="color:var(--text-muted);font-style:italic">${d.notas}</div>`:''}
+          <div class="feed-card-footer">👤 ${d.reportado_por||'Anónimo'}</div>
+        </div>`;
+      }
+    }
+  };
 
   function initSB() { sb = window.supabase.createClient(SUPABASE_URL, ANON_KEY); }
 
@@ -398,6 +532,173 @@
     }).join('');
   }
 
+  /* ========== AYUDA ========== */
+
+  async function loadAyuda() {
+    const promises = AYUDA_TABLES.map(async (key) => {
+      const { data } = await sb.from(AYUDA_CONFIG[key].table).select('*').order('id', { ascending: false }).limit(200);
+      ayudaData[key] = data||[];
+    });
+    await Promise.all(promises);
+    renderAyuda();
+  }
+
+  function subscribeAyuda() {
+    ayudaSubs.forEach(s => { try { s.unsubscribe(); } catch(e) {} });
+    ayudaSubs = AYUDA_TABLES.map((key) => {
+      const chan = sb.channel('ayuda-'+key);
+      chan.on('postgres_changes', { event: '*', schema: 'public', table: AYUDA_CONFIG[key].table }, () => { loadAyudaTable(key); });
+      chan.subscribe();
+      return chan;
+    });
+  }
+
+  async function loadAyudaTable(key) {
+    const { data } = await sb.from(AYUDA_CONFIG[key].table).select('*').order('id', { ascending: false }).limit(200);
+    ayudaData[key] = data||[];
+    renderAyuda();
+  }
+
+  function renderAyuda() {
+    const grid = document.getElementById('ayudaGrid');
+    const filters = document.getElementById('ayudaFilters');
+    if (!grid) return;
+    // Build action cards
+    grid.innerHTML = AYUDA_TABLES.map((key, i) => {
+      const cfg = AYUDA_CONFIG[key];
+      const count = ayudaData[key] ? ayudaData[key].filter(d => {
+        // Count pending (not rescued/covered/reunified)
+        if (key === 'atrapadas') return !d.rescatado;
+        if (key === 'ninos') return d.estado !== 'reunificado';
+        if (key === 'necesidades') return !d.cubierta;
+        if (key === 'ayudantes') return d.disponible;
+        return true;
+      }).length : 0;
+      return `<button class="ayuda-card" data-section="${key}" style="animation-delay:${i*0.05}s">
+        <span class="ayuda-card-icon">${cfg.icon}</span>
+        <span class="ayuda-card-label">${cfg.label.replace(/^..\s/,'')}</span>
+        ${count > 0 ? `<span class="ayuda-card-count">${count}</span>` : ''}
+      </button>`;
+    }).join('');
+    // Build filter pills
+    const allFilters = [{key:'todas',icon:'📋',label:'Todas'}]
+      .concat(AYUDA_TABLES.map(k => ({key:k, icon:AYUDA_CONFIG[k].icon, label:AYUDA_CONFIG[k].label.replace(/^..\s/,'').split(' ')[0]})));
+    filters.innerHTML = allFilters.map(f =>
+      `<button class="feed-filter ayuda-filter ${f.key===ayudaFilter?'active':''}" data-ayuda="${f.key}">${f.icon} ${f.label}</button>`
+    ).join('');
+    // Render list
+    renderAyudaList();
+  }
+
+  function renderAyudaList() {
+    const el = document.getElementById('ayudaList');
+    if (!el) return;
+    let items = [];
+    if (ayudaFilter === 'todas') {
+      AYUDA_TABLES.forEach(key => {
+        (ayudaData[key]||[]).forEach(d => {
+          items.push({ key, data: d });
+        });
+      });
+    } else {
+      (ayudaData[ayudaFilter]||[]).forEach(d => items.push({ key: ayudaFilter, data: d }));
+    }
+    items.sort((a,b) => new Date(b.data.created_at) - new Date(a.data.created_at));
+    if (!items.length) {
+      el.innerHTML = '<div class="feed-empty">No hay reportes de ayuda aún. Tocá una tarjeta arriba para reportar.</div>';
+      return;
+    }
+    el.innerHTML = items.map(({key, data}) => {
+      const fn = AYUDA_CONFIG[key] && AYUDA_CONFIG[key].render;
+      return fn ? fn(data) : `<div class="ayuda-card-item">${JSON.stringify(data).slice(0,100)}</div>`;
+    }).join('');
+  }
+
+  function openAyudaForm(type) {
+    const cfg = AYUDA_CONFIG[type];
+    if (!cfg) return;
+    document.getElementById('ayudaModalTitle').textContent = cfg.icon + ' ' + cfg.label;
+    document.getElementById('ayudaType').value = type;
+    document.getElementById('ayudaFields').innerHTML = cfg.fields();
+    document.getElementById('ayudaForm').reset();
+    document.getElementById('ayudaModal').classList.remove('hidden');
+  }
+
+  async function submitAyuda(e) {
+    e.preventDefault();
+    const type = document.getElementById('ayudaType').value;
+    const cfg = AYUDA_CONFIG[type];
+    if (!cfg) return alert('Error: tipo inválido');
+    // Build insert data
+    const data = {};
+    data.reportado_por = ($('af_reportante')?.value||'Anónimo').trim() || 'Anónimo';
+    // Common fields
+    if ($('af_ubicacion')) data.ubicacion = $('af_ubicacion').value.trim();
+    if ($('af_nombre')) data.nombre = $('af_nombre').value.trim();
+    if ($('af_telefono')) data.telefono = $('af_telefono').value.trim();
+    if ($('af_contacto')) data.contacto = $('af_contacto').value.trim();
+    if ($('af_notas')) data.notas = $('af_notas').value.trim();
+    if ($('af_descripcion')) data.descripcion = $('af_descripcion').value.trim();
+    if ($('af_tipo')) data.tipo = $('af_tipo').value;
+    if ($('af_prioridad')) data.prioridad = $('af_prioridad').value;
+    if ($('af_ubicacion')) data.ubicacion = $('af_ubicacion').value.trim();
+    if ($('af_estado')) data.estado = $('af_estado').value;
+    // Type-specific fields
+    if (type === 'atrapadas') {
+      data.cuantas_personas = parseInt($('af_cuantas')?.value) || 1;
+      data.tipo_estructura = $('af_estructura')?.value || 'otro';
+      if (data.contacto === undefined) data.contacto = $('af_contacto')?.value?.trim() || '';
+    }
+    if (type === 'ninos') {
+      data.nombre_aproximado = data.nombre || '';
+      delete data.nombre;
+      data.edad_aproximada = $('af_edad')?.value?.trim() || '';
+      data.sexo = $('af_sexo')?.value || '';
+      data.quien_lo_tiene = $('af_quien')?.value?.trim() || '';
+      data.telefono_contacto = data.telefono || '';
+      if (data.telefono !== undefined) delete data.telefono;
+    }
+    if (type === 'mascotas') {
+      data.estado = $('af_estado')?.value || 'perdida';
+    }
+    if (type === 'ayudantes') {
+      data.tipo = $('af_tipo')?.value || 'otro';
+      data.disponible = true;
+    }
+    if ($('afLat')?.value) data.lat = parseFloat($('afLat').value) || null;
+    if ($('afLng')?.value) data.lng = parseFloat($('afLng').value) || null;
+    if (!data.nombre && !data.nombre_aproximado && type === 'hospitales') return alert('El nombre es obligatorio.');
+    if (!data.nombre && type === 'ayudantes') return alert('El nombre es obligatorio.');
+    if (!data.nombre_aproximado && type === 'ninos') data.nombre_aproximado = 'No disponible';
+    const { error } = await sb.from(cfg.table).insert(data);
+    if (error) return alert('❌ Error: '+error.message);
+    document.getElementById('ayudaForm').reset();
+    document.getElementById('ayudaModal').classList.add('hidden');
+    alert('✅ Reportado. Aparece al instante.');
+    loadAyudaTable(type);
+  }
+
+  window.app.rescatar = async function(key, id) {
+    if (!confirm('¿Confirmás que fueron rescatados?')) return;
+    const cfg = key === 'atrapadas' ? AYUDA_CONFIG.atrapadas : null;
+    if (!cfg) return;
+    const { error } = await sb.from(cfg.table).update({ rescatado: true }).eq('id', id);
+    if (error) return alert('❌ '+error.message);
+    loadAyudaTable(key);
+  };
+  window.app.reunificar = async function(id) {
+    if (!confirm('¿Confirmás que este niño/a fue reunificado con su familia?')) return;
+    const { error } = await sb.from('ninos_solos').update({ estado: 'reunificado' }).eq('id', id);
+    if (error) return alert('❌ '+error.message);
+    loadAyudaTable('ninos');
+  };
+  window.app.cubrir = async function(id) {
+    if (!confirm('¿Confirmás que esta necesidad está cubierta?')) return;
+    const { error } = await sb.from('necesidades').update({ cubierta: true }).eq('id', id);
+    if (error) return alert('❌ '+error.message);
+    loadAyudaTable('necesidades');
+  };
+
   /* ========== TABS ========== */
 
   function initTabs() {
@@ -736,6 +1037,7 @@
     await loadFeed(); subscribeFeed();
     await loadChat(); subscribeChat();
     await loadPersonas(); subscribePersonas();
+    await loadAyuda(); subscribeAyuda();
     setInterval(renderSismos, 30000);
     initTabs();
     window.app.detail = showDetail;
@@ -818,6 +1120,23 @@
       }, () => alert('No se pudo obtener ubicación.'), { enableHighAccuracy: true });
     });
     $('personasForm').addEventListener('submit', submitPersona);
+
+    /* Ayuda events */
+    document.addEventListener('click', function(e) {
+      const card = e.target.closest('.ayuda-card');
+      if (card) { openAyudaForm(card.dataset.section); }
+    });
+    document.addEventListener('click', function(e) {
+      const filter = e.target.closest('.ayuda-filter');
+      if (filter) {
+        document.querySelectorAll('.ayuda-filter').forEach(b => b.classList.remove('active'));
+        filter.classList.add('active');
+        ayudaFilter = filter.dataset.ayuda;
+        renderAyudaList();
+      }
+    });
+    $('closeAyudaModal').addEventListener('click', () => $('ayudaModal').classList.add('hidden'));
+    $('ayudaForm').addEventListener('submit', submitAyuda);
 
     /* Personas search + status filters */
     $('personasSearch').addEventListener('input', function() {

@@ -30,6 +30,7 @@
     <button class="tab-btn" data-tab="personas">👥 PERSONAS</button>
     <button class="tab-btn" data-tab="sismos">🌋 SISMOS</button>
     <button class="tab-btn" data-tab="chat">💬 CHAT</button>
+    <button class="tab-btn" data-tab="ayuda">🆘 AYUDA</button>
   </nav>
 
   <!-- TAB: FEED -->
@@ -190,6 +191,15 @@
     </div>
   </div>
 
+  <!-- TAB: AYUDA -->
+  <div id="tab-ayuda" class="tab-content">
+    <div id="ayudaContainer">
+      <div class="ayuda-grid" id="ayudaGrid"></div>
+      <div class="ayuda-filters" id="ayudaFilters"></div>
+      <div id="ayudaList"><div class="feed-loading">Cargando datos de ayuda...</div></div>
+    </div>
+  </div>
+
   <!-- SIDEBAR (outside tabs so it's always in DOM) -->
   <div id="sidebar" class="hidden">
     <div id="sidebarHeader">
@@ -315,6 +325,23 @@
         </div>
       </form>
       <p class="modal-note">3+ denuncias marcan el reporte como cuestionable.</p>
+    </div>
+  </div>
+
+  <div id="ayudaModal" class="modal hidden">
+    <div class="modal-content">
+      <div class="modal-header">
+        <h2 id="ayudaModalTitle">Registrar</h2>
+        <button class="icon-btn" id="closeAyudaModal">✕</button>
+      </div>
+      <form id="ayudaForm">
+        <input type="hidden" id="ayudaType">
+        <input type="hidden" id="ayudaLat">
+        <input type="hidden" id="ayudaLng">
+        <div id="ayudaFields"></div>
+        <button type="submit" class="btn btn-primary btn-block">✅ Publicar</button>
+      </form>
+      <p class="modal-note">Tu reporte aparece al instante para todos.</p>
     </div>
   </div>
 </div>
