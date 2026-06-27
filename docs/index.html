@@ -20,6 +20,7 @@
     <h1>VENEZUELA CRISIS</h1>
     <span id="statusBadge" class="badge badge-warning">⚠️ CARGANDO...</span>
     <span id="userCount" class="badge badge-success" style="display:none">👥 0</span>
+    <button id="langToggle" class="icon-btn" title="Idioma / Language">🌐</button>
   </div>
 
   <div id="crisisStats"><div id="crisisStatsInner" class="stats-scroll"></div><div id="cifraUpdated"></div></div>
@@ -221,15 +222,17 @@
         <label class="filter-item"><input type="checkbox" id="filterRiesgo" checked><span>Edificios Riesgo</span></label>
         <label class="filter-item"><input type="checkbox" id="filterSismos" checked><span>⚡ Sismos / Réplicas</span></label>
         <label class="filter-item"><input type="checkbox" id="filterUSGS" checked><span>📡 USGS Tiempo Real</span></label>
-        <label class="filter-item"><input type="checkbox" id="filterFeed" checked><span>📰 Incidencias Feed</span></label>
-      </div>
-      <h3>Reportar</h3>
+          <label class="filter-item"><input type="checkbox" id="filterFeed" checked><span>📰 Incidencias Feed</span></label>
+          <label class="filter-item"><input type="checkbox" id="filterRutas" checked><span>🛡️ Rutas Seguras</span></label>
+        </div>
+        <h3>Reportar</h3>
       <div class="report-buttons">
         <button class="btn btn-primary" id="reportCentro">📦 Nuevo Centro</button>
         <button class="btn btn-danger" id="reportColapso">💥 Zona Colapsada</button>
         <button class="btn btn-warning" id="reportRiesgo">⚠️ Edificio Riesgo</button>
-        <button class="btn btn-outline" id="reportSismo">⚡ Reportar Sismo</button>
-      </div>
+          <button class="btn btn-outline" id="reportSismo">⚡ Reportar Sismo</button>
+          <button class="btn btn-success" id="reportRuta">🛡️ Marcar Ruta Segura</button>
+        </div>
       <h3>Últimos Reportes</h3>
       <div id="recentReports"><p style="color:var(--text-muted);font-size:12px">Cargando...</p></div>
       <h3>Llamadas de Emergencia</h3>
@@ -343,6 +346,16 @@
       </form>
       <p class="modal-note">Tu reporte aparece al instante para todos.</p>
     </div>
+  <!-- LANGUAGE SELECTOR -->
+  <div id="langMenu" class="hidden">
+    <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:16px">
+      <h2 style="font-size:18px;font-weight:700">🌐 Idioma / Language</h2>
+      <button class="icon-btn" id="closeLangMenu">✕</button>
+    </div>
+    <div class="lang-option active" data-lang="es">🇻🇪 Español</div>
+    <div class="lang-option" data-lang="en">🇺🇸 English</div>
+    <div class="lang-option" data-lang="pt">🇧🇷 Português</div>
+    <p style="font-size:11px;color:var(--text-muted);margin-top:12px;text-align:center">🇺🇳 Equipos de rescate internacional pueden cambiar el idioma</p>
   </div>
 </div>
 

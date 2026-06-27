@@ -10,6 +10,9 @@
   let usgsQuakes = [];
   const USGS_URL = 'https://earthquake.usgs.gov/fdsnws/event/1/query?format=geojson&minlatitude=2&maxlatitude=13&minlongitude=-74&maxlongitude=-59&minmagnitude=2.5&orderby=time&limit=30';
 
+  let rutasSeguras = [];
+  let rutasLayer = null;
+
   let feedData = [];
   let feedFilter = 'todas';
   let feedTime = '24h';
@@ -31,6 +34,16 @@
   const CONFIABILIDAD = { alta:{label:'🟢 Alta',color:'#27ae60'}, media:{label:'🟡 Media',color:'#f39c12'}, baja:{label:'🔴 Baja',color:'#e74c3c'} };
   const CATS = { ultimo_minuto:{label:'⚡Último Min',color:'#9b59b6'}, alerta:{label:'🚨Alerta',color:'#e74c3c'}, noticia:{label:'📰Noticia',color:'#3498db'}, desplazamiento:{label:'🚶Desplaz.',color:'#e67e22'}, medicamentos:{label:'💊Medic.',color:'#27ae60'}, sismo:{label:'🔴Sismo',color:'#ff4444'} };
   const STATUS_PERSONA = { bien:{label:'✅ Bien',color:'#27ae60'}, herido:{label:'🆘 Herido',color:'#e74c3c'}, buscando_familiares:{label:'🔍 Busca familiares',color:'#f39c12'}, necesita_medicamentos:{label:'💊 Necesita medic.',color:'#9b59b6'}, voluntario:{label:'🙋 Voluntario',color:'#3498db'}, fallecido:{label:'💔 Fallecido',color:'#7f8c8d'} };
+
+  function urlBase64ToUint8Array(base64String) {
+    const padding = '='.repeat((4 - base64String.length % 4) % 4);
+    const base64 = (base64String + padding).replace(/-/g, '+').replace(/_/g, '/');
+    const rawData = atob(base64);
+    const outputArray = new Uint8Array(rawData.length);
+    for (let i = 0; i < rawData.length; ++i) outputArray[i] = rawData.charCodeAt(i);
+    return outputArray;
+  }
+
   const AYUDA_TABLES = ['atrapadas','hospitales','ninos','necesidades','mascotas','ayudantes'];
   const AYUDA_CONFIG = {
     atrapadas: {
@@ -275,6 +288,7 @@
     return `<div class="feed-card" style="border-left:4px solid ${cat.color}">
       <div class="feed-card-header">
         <span class="feed-cat" style="background:${cat.color}22;color:${cat.color};border:1px solid ${cat.color}44">${cat.label}${isSismo ? ' M'+(f.mag||'') : ''}</span>
+        ${f.verificada ? '<span class="feed-cat verified-badge">✅ Verificado</span>' : ''}
         <span class="feed-time">${t}</span>
       </div>
       <div class="feed-card-title">${f.titulo}</div>
@@ -283,6 +297,7 @@
         ${isSismo ? `<span style="font-weight:600;color:#ff6666">📡 ${f.reportado_por} / Funvisis / SGC</span>` : `<span>${fuente.label}</span>`}
         <span>${conf.label}</span>
         ${f.ubicacion_nombre ? `<span class="feed-loc" ${coords}>📍 ${f.ubicacion_nombre}</span>` : ''}
+        ${f.verificada_por ? `<span style="color:#27ae60;font-weight:600">🏛 ${f.verificada_por}</span>` : ''}
       </div>
     </div>`;
   }
@@ -456,8 +471,32 @@
           ${p.notas ? `<div class="persona-notes">${p.notas}</div>` : ''}
           <div class="persona-time">${t}</div>
         </div>
+        ${p.telefono || p.ubicacion_texto ? `<button class="btn btn-outline" style="padding:6px 10px;font-size:11px;flex-shrink:0;align-self:center" onclick="shareWhatsApp('${p.nombre.replace(/'/g,"\\'")}','${(STATUS_PERSONA[p.status]||{label:''}).label}','${(p.ubicacion_texto||'').replace(/'/g,"\\'")}','${(p.telefono||'').replace(/'/g,"\\'")}')">📲 Compartir</button>` : ''}
       </div>`;
     }).join('');
+    // Append hospital matches for family search
+    if (personasSearchQuery && ayudaData.hospitales) {
+      const hq = personasSearchQuery.toLowerCase();
+      const hospMatches = ayudaData.hospitales.filter(p => p.nombre && p.nombre.toLowerCase().includes(hq));
+      if (hospMatches.length) {
+        let extra = '<div style="font-size:11px;color:var(--text-muted);margin:8px 0;text-align:center">🏥 Personas en hospitales con ese nombre:</div>';
+        extra += hospMatches.map(p => {
+          const estados = {ingresado:{c:'#3498db',l:'🏥'},uci:{c:'#e74c3c',l:'🆘'},alta:{c:'#27ae60',l:'✅'},fallecido:{c:'#7f8c8d',l:'💔'}};
+          const e = estados[p.estado]||estados.ingresado;
+          return `<div class="persona-card" style="border-left:4px solid ${e.c};margin-top:6px">
+            <div class="persona-foto persona-foto-placeholder" style="background:${e.c}">👤</div>
+            <div class="persona-info">
+              <div class="persona-name">${p.nombre}</div>
+              <span class="persona-status" style="background:${e.c}22;color:${e.c}">${e.l} ${p.estado||'ingresado'}</span>
+              ${p.hospital ? `<div class="persona-loc">🏥 ${p.hospital}</div>` : ''}
+              ${p.telefono ? `<div class="persona-tel">📞 ${p.telefono}</div>` : ''}
+              <div class="persona-time">${timeAgo(p.created_at)}</div>
+            </div>
+          </div>`;
+        }).join('');
+        el.innerHTML += extra;
+      }
+    }
   }
 
   async function submitPersona(e) {
@@ -492,6 +531,13 @@
       document.getElementById('pFotoPreview').style.display = 'flex';
     };
     reader.readAsDataURL(file);
+  }
+
+  function shareWhatsApp(nombre, status, ubicacion, telefono) {
+    const msg = encodeURIComponent(
+      `🚨 BÚSQUEDA - Terremoto Venezuela\n\nNombre: ${nombre}\nEstado: ${status}\n${ubicacion ? '📍 '+ubicacion : ''}\n${telefono ? '📞 '+telefono : ''}\n\nAbrí el mapa de crisis: https://venezuelacrisis.vercel.app/?buscar=${encodeURIComponent(nombre)}`
+    );
+    window.open(`https://wa.me/?text=${msg}`, '_blank');
   }
 
   /* ========== SISMOS TAB ========== */
@@ -553,6 +599,29 @@
     });
   }
 
+  async function loadRutas() {
+    const { data } = await sb.from('rutas_seguras').select('*').order('id', { ascending: false }).limit(200);
+    rutasSeguras = data||[];
+    renderRutasMap();
+  }
+
+  function renderRutasMap() {
+    if (!map) return;
+    if (rutasLayer) map.removeLayer(rutasLayer);
+    if (!document.getElementById('filterRutas').checked) return;
+    const markers = rutasSeguras.filter(r => r.lat && r.lng).map(r => {
+      const col = r.tipo === 'zona_segura' ? '#27ae60' : r.tipo === 'ruta' ? '#3498db' : '#f39c12';
+      const icon = L.divIcon({
+        className: 'custom-marker',
+        html: `<div style="background:${col};width:32px;height:32px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:14px;border:2px solid #fff">${r.tipo === 'zona_segura' ? '🛡️' : r.tipo === 'ruta' ? '🚗' : '📍'}</div>`,
+        iconSize: [32,32], iconAnchor: [16,16]
+      });
+      return L.marker([r.lat, r.lng], { icon }).bindPopup(`<div class="popup-content"><h3>${r.nombre}</h3><p>${r.descripcion||''}</p><p style="font-size:11px;color:var(--text-muted)">👤 ${r.reportado_por||'Anónimo'}</p></div>`);
+    });
+    rutasLayer = L.layerGroup(markers);
+    rutasLayer.addTo(map);
+  }
+
   async function loadAyudaTable(key) {
     const { data } = await sb.from(AYUDA_CONFIG[key].table).select('*').order('id', { ascending: false }).limit(200);
     ayudaData[key] = data||[];
@@ -588,6 +657,7 @@
     ).join('');
     // Render list
     renderAyudaList();
+    renderAyudaDashboard();
   }
 
   function renderAyudaList() {
@@ -612,6 +682,33 @@
       const fn = AYUDA_CONFIG[key] && AYUDA_CONFIG[key].render;
       return fn ? fn(data) : `<div class="ayuda-card-item">${JSON.stringify(data).slice(0,100)}</div>`;
     }).join('');
+  }
+
+  function renderAyudaDashboard() {
+    const grid = document.getElementById('ayudaGrid');
+    if (!grid) return;
+    let existing = document.getElementById('ayudaDashboard');
+    if (existing) existing.remove();
+    const total = { atrapadas: 0, rescatados: 0, hospitales: 0, ninos: 0, necesidades: 0, mascotas: 0, ayudantes: 0 };
+    (ayudaData.atrapadas||[]).forEach(d => { if (!d.rescatado) total.atrapadas++; else total.rescatados++; });
+    (ayudaData.hospitales||[]).forEach(() => total.hospitales++);
+    (ayudaData.ninos||[]).forEach(d => { if (d.estado !== 'reunificado') total.ninos++; });
+    (ayudaData.necesidades||[]).forEach(d => { if (!d.cubierta) total.necesidades++; });
+    (ayudaData.mascotas||[]).forEach(d => total.mascotas++);
+    (ayudaData.ayudantes||[]).forEach(d => { if (d.disponible) total.ayudantes++; });
+    const strip = document.createElement('div');
+    strip.id = 'ayudaDashboard';
+    strip.className = 'ayuda-dashboard';
+    strip.innerHTML = `
+      <div class="ad-item danger">🆘 ${total.atrapadas} atrapados</div>
+      <div class="ad-item success">✅ ${total.rescatados} rescatados</div>
+      <div class="ad-item warning">🏥 ${total.hospitales} hospitalizados</div>
+      <div class="ad-item danger">👶 ${total.ninos} niños solos</div>
+      <div class="ad-item warning">💊 ${total.necesidades} necesidades</div>
+      <div class="ad-item info">🐾 ${total.mascotas} mascotas</div>
+      <div class="ad-item success">🙋 ${total.ayudantes} voluntarios</div>
+    `;
+    grid.parentNode.insertBefore(strip, grid.nextSibling);
   }
 
   function openAyudaForm(type) {
@@ -924,6 +1021,15 @@
 
   /* ========== DENUNCIAS ========== */
   function abrirDenuncia(type, id) {
+    // Block denuncias for verified items
+    if (type === 'feed') {
+      const item = feedData.find(f => f.id === id);
+      if (item && item.verificada) return alert('✅ Este reporte está verificado por organismos oficiales. No se puede denunciar.');
+    }
+    if (type === 'sismo') {
+      const item = allData.reportes_sismos.find(s => s.id === id);
+      if (item && item.verificada) return alert('✅ Este reporte sísmico está verificado. No se puede denunciar.');
+    }
     document.getElementById('denunciaType').value = type;
     document.getElementById('denunciaId').value = id;
     document.getElementById('denunciaForm').reset();
@@ -1038,10 +1144,12 @@
     await loadChat(); subscribeChat();
     await loadPersonas(); subscribePersonas();
     await loadAyuda(); subscribeAyuda();
+    await loadRutas();
     setInterval(renderSismos, 30000);
     initTabs();
     window.app.detail = showDetail;
     window.app.denunciar = abrirDenuncia;
+    window.app.shareWhatsApp = shareWhatsApp;
   }
   document.addEventListener('DOMContentLoaded', init);
 
@@ -1064,6 +1172,18 @@
     });
     $('filterFeed')?.addEventListener('change', function() {
       if(this.checked && layers.feed) map.addLayer(layers.feed); else if(layers.feed) map.removeLayer(layers.feed);
+    });
+    $('filterRutas')?.addEventListener('change', function() { renderRutasMap(); });
+    $('reportRuta')?.addEventListener('click', function() {
+      if (!pendingLat || !pendingLng) return alert('Primero hacé clic en el mapa para marcar la ubicación.');
+      const nombre = prompt('Nombre de este punto/ruta segura:')?.trim();
+      if (!nombre) return;
+      const tipo = prompt('Tipo: zona_segura, ruta, o punto_encuentro') || 'punto_encuentro';
+      const desc = prompt('Descripción (opcional):')?.trim() || '';
+      sb.from('rutas_seguras').insert({ nombre, tipo, lat: pendingLat, lng: pendingLng, descripcion: desc }).then(({error}) => {
+        if (error) alert('❌ '+error.message);
+        else { alert('✅ Ruta reportada.'); loadRutas(); pendingLat=null; pendingLng=null; }
+      });
     });
     $('reportCentro').addEventListener('click', ()=>{ $('sidebar').classList.add('hidden'); showModal('centro'); });
     $('reportColapso').addEventListener('click', ()=>{ $('sidebar').classList.add('hidden'); showModal('colapsada'); });
@@ -1191,6 +1311,38 @@
         else if(!$('sidebar').classList.contains('hidden')) $('sidebar').classList.add('hidden');
       }
     });
+
+    /* Language / Idioma */
+    $('langToggle').addEventListener('click', () => $('langMenu').classList.remove('hidden'));
+    $('closeLangMenu').addEventListener('click', () => $('langMenu').classList.add('hidden'));
+    document.querySelectorAll('.lang-option').forEach(el => {
+      el.addEventListener('click', function() {
+        document.querySelectorAll('.lang-option').forEach(o => o.classList.remove('active'));
+        this.classList.add('active');
+        $('langMenu').classList.add('hidden');
+        const lang = this.dataset.lang;
+        // For now just show desktop notification about language change
+        // Full i18n can be implemented later
+        if (lang !== 'es') alert('🌐 ' + (lang === 'en' ? 'Language changed to English. Full translation coming soon.' : 'Idioma alterado para Português. Tradução completa em breve.'));
+      });
+    });
+
+    /* Push notifications permission */
+    if ('Notification' in window && Notification.permission === 'default') {
+      // Ask on first interaction with a sismo or alerta
+      document.querySelector('.feed-filter-cat[data-cat="alerta"]')?.addEventListener('click', function askPush() {
+        Notification.requestPermission().then(perm => {
+          if (perm === 'granted' && 'serviceWorker' in navigator) {
+            navigator.serviceWorker.ready.then(reg => {
+              reg.pushManager.subscribe({ userVisibleOnly: true, applicationServerKey: urlBase64ToUint8Array('BIsZ0cC9pOlFOFXq-2I6DcsbQqdJxlG5ELAhEJvkIxWMk_Tm-O0kgYR0o0R0_kTzCjZ-nhFpBiQOsBqPFdFh8bI') })
+                .then(() => alert('✅ Notificaciones activadas. Recibirás alertas de sismos y emergencias.'))
+                .catch(() => {});
+            });
+          }
+        });
+        this.removeEventListener('click', askPush);
+      }, { once: true });
+    }
 
     if ('serviceWorker' in navigator) {
       navigator.serviceWorker.register('/sw.js').catch(() => {});

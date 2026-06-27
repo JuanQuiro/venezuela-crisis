@@ -220,6 +220,25 @@ html, body { height: 100%; font-family: -apple-system,BlinkMacSystemFont,'Segoe 
 .ayuda-card-title { font-size: 15px; font-weight: 700; margin-bottom: 4px; }
 .ayuda-card-desc { font-size: 13px; color: var(--text-muted); line-height: 1.4; margin-bottom: 2px; }
 
+/* ========== AYUDA DASHBOARD ========== */
+.ayuda-dashboard { flex-shrink: 0; display: flex; gap: 6px; padding: 6px 10px; overflow-x: auto; -webkit-overflow-scrolling: touch; border-bottom: 1px solid var(--border); background: var(--bg); }
+.ayuda-dashboard::-webkit-scrollbar { height: 0; }
+.ad-item { flex: 0 0 auto; padding: 6px 12px; border-radius: 16px; font-size: 12px; font-weight: 700; white-space: nowrap; }
+.ad-item.danger { background: rgba(231,76,60,0.15); color: #e74c3c; }
+.ad-item.warning { background: rgba(243,156,18,0.15); color: #f39c12; }
+.ad-item.success { background: rgba(39,174,96,0.15); color: #27ae60; }
+.ad-item.info { background: rgba(52,152,219,0.15); color: #3498db; }
+
+/* ========== VERIFIED BADGE ========== */
+.verified-badge { background: #27ae60 !important; color: #fff !important; border-color: #27ae60 !important; margin-right: 4px; }
+
+/* ========== LANGUAGE TOGGLE ========== */
+#langMenu { position: fixed; bottom: 0; left: 0; right: 0; background: var(--bg-modal); border-radius: var(--radius) var(--radius) 0 0; z-index: 4000; padding: 20px; animation: slideUp 0.2s ease; }
+#langMenu.hidden { display: none; }
+.lang-option { display: flex; align-items: center; gap: 12px; padding: 14px; font-size: 16px; cursor: pointer; border-radius: var(--radius-sm); min-height: 48px; }
+.lang-option:hover { background: var(--bg-card); }
+.lang-option.active { background: var(--bg-card); border: 2px solid var(--primary); }
+
 /* ========== RESPONSIVE TWEAKS ========== */
 @media (min-width: 768px) {
   .modal { align-items: center; }

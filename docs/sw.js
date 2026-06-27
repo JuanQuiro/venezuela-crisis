@@ -42,6 +42,17 @@ self.addEventListener('fetch', e => {
   e.respondWith(networkFirst(e.request, CACHE));
 });
 
+self.addEventListener('push', e => {
+  const data = e.data?.json() || { title: '🔴 Venezuela Crisis', body: 'Nuevo reporte en la plataforma', icon: '/icons/icon-192.png', tag: 'vzla-crisis' };
+  self.registration.showNotification(data.title, { body: data.body, icon: data.icon, tag: data.tag, vibrate: [200,100,200], requireInteraction: true });
+});
+
+self.addEventListener('notificationclick', e => {
+  e.notification.close();
+  const url = e.notification.data?.url || '/';
+  clients.openWindow(url);
+});
+
 async function cacheFirst(req) {
   const cached = await caches.match(req);
   return cached || fetch(req).then(r => {
