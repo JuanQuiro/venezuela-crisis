@@ -7,10 +7,25 @@
 <meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
 <meta name="mobile-web-app-capable" content="yes">
+<meta name="description" content="Mapa interactivo en tiempo real del terremoto en Venezuela 2026. Centros de acopio, zonas colapsadas, reportes de saqueos, servicios, personas desaparecidas y ayuda humanitaria.">
+<meta property="og:title" content="VENEZUELA CRISIS — Mapa del Sismo 2026">
+<meta property="og:description" content="Reportá daños, saqueos, servicios sin luz/agua, y encontrá centros de acopio. Datos en tiempo real, anónimo y sin registro.">
+<meta property="og:type" content="website">
+<meta property="og:url" content="https://venezuelacrisis.vercel.app">
+<meta property="og:image" content="https://venezuelacrisis.vercel.app/icons/icon-512.png">
+<meta property="og:locale" content="es_VE">
+<meta name="twitter:card" content="summary_large_image">
+<meta name="twitter:title" content="VENEZUELA CRISIS — Mapa del Sismo 2026">
+<meta name="twitter:description" content="Reportá daños, saqueos, y servicios sin luz/agua. Datos en tiempo real, anónimo.">
 <link rel="manifest" href="/manifest.json">
+<link rel="icon" type="image/png" sizes="192x192" href="/icons/icon-192.png">
+<link rel="icon" type="image/png" sizes="512x512" href="/icons/icon-512.png">
 <link rel="apple-touch-icon" href="/icons/icon-192.png">
-<title>VENEZUELA CRISIS - Sismo 2026</title>
+<link rel="shortcut icon" href="/icons/icon-192.png">
+<title>VENEZUELA CRISIS — Sismo 2026</title>
 <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
+<link rel="stylesheet" href="https://unpkg.com/leaflet.markercluster@1.5.3/dist/MarkerCluster.css" />
+<link rel="stylesheet" href="https://unpkg.com/leaflet.markercluster@1.5.3/dist/MarkerCluster.Default.css" />
 <link rel="stylesheet" href="style.css" />
 </head>
 <body>
@@ -20,6 +35,7 @@
     <h1>VENEZUELA CRISIS</h1>
     <span id="statusBadge" class="badge badge-warning">⚠️ CARGANDO...</span>
     <span id="userCount" class="badge badge-success" style="display:none">👥 0</span>
+    <button id="searchToggle" class="icon-btn" title="Buscar personas">🔍</button>
     <button id="langToggle" class="icon-btn" title="Idioma / Language">🌐</button>
   </div>
 
@@ -31,6 +47,8 @@
     <button class="tab-btn" data-tab="personas">👥 PERSONAS</button>
     <button class="tab-btn" data-tab="sismos">🌋 SISMOS</button>
     <button class="tab-btn" data-tab="chat">💬 CHAT</button>
+    <button class="tab-btn" data-tab="desaparecidos">🔍 DESAPARECIDOS</button>
+    <button class="tab-btn" data-tab="info">📋 INFO</button>
     <button class="tab-btn" data-tab="ayuda">🆘 AYUDA</button>
   </nav>
 
@@ -57,10 +75,8 @@
         </div>
       </div>
       <div id="feedTimeline"><div class="feed-loading">Cargando incidencias...</div></div>
-      <div id="feedFab">
-        <button id="fabFeed" class="fab fab-primary" title="Nueva incidencia">📝</button>
-      </div>
     </div>
+    <button id="fabFeed" class="fab fab-primary tab-fab" title="Nueva incidencia">📝</button>
   </div>
 
   <!-- TAB: MAPA -->
@@ -76,9 +92,11 @@
   <div id="tab-personas" class="tab-content">
     <div id="personasContainer">
       <div class="personas-form">
-        <div style="padding:12px 16px;background:var(--bg-card);border-bottom:1px solid var(--border)">
-          <p style="font-size:14px;font-weight:600;color:var(--text)">🙋 Registrate para que te encuentren</p>
-          <p style="font-size:12px;color:var(--text-muted);margin-top:2px">Rescatistas y familiares ven tus datos al instante</p>
+        <div class="personas-form-header collapsed" id="personasFormToggle">
+          <div>
+            <div style="font-size:16px;font-weight:700">🙋 Registrate para que te encuentren</div>
+            <div style="font-size:12px;color:var(--text-muted);font-weight:400;margin-top:2px">Rescatistas y familiares ven tus datos al instante</div>
+          </div>
         </div>
         <form id="personasForm">
           <div class="pf-row">
@@ -151,6 +169,7 @@
         <div class="feed-loading">Cargando personas...</div>
       </div>
     </div>
+    <button id="fabPersonas" class="fab fab-primary tab-fab" title="Registrarme">🙋</button>
   </div>
 
   <!-- TAB: SISMOS -->
@@ -177,6 +196,7 @@
         <span>📡 Datos: USGS / Funvisis / SGC · Actualiza cada 60s</span>
       </div>
     </div>
+    <button id="fabSismos" class="fab fab-primary tab-fab" title="Reportar sismo">⚡</button>
   </div>
 
   <!-- TAB: CHAT -->
@@ -188,6 +208,323 @@
         <input type="text" id="chatAlias" placeholder="Alias" maxlength="20" autocomplete="off">
         <input type="text" id="chatInput" placeholder="Escribe un mensaje..." maxlength="500" autocomplete="off">
         <button id="chatSend" class="btn btn-primary" disabled>▶</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- TAB: DESAPARECIDOS -->
+  <div id="tab-desaparecidos" class="tab-content">
+    <div id="desaparecidosContainer">
+      <!-- Sección: BUSCAR -->
+      <div class="desap-section">
+        <div class="desap-section-header" style="background:var(--danger);color:#fff">
+          <span>🔍 Buscar desaparecidos</span>
+          <span>¿Buscás a alguien? Publicá sus datos</span>
+        </div>
+        <form id="desaparecidosForm" class="desap-form">
+          <div class="pf-row">
+            <div class="pf-field">
+              <label>Nombre de la persona buscada</label>
+              <input type="text" id="dNombre" required placeholder="Nombre completo" maxlength="80">
+            </div>
+            <div class="pf-field" style="flex:0 0 auto">
+              <label>Foto</label>
+              <button type="button" id="dFotoBtn" class="btn btn-outline" style="font-size:18px">📷</button>
+              <input type="file" id="dFotoInput" accept="image/*" capture="environment" style="display:none">
+            </div>
+          </div>
+          <div class="pf-row">
+            <div class="pf-field">
+              <label>Edad</label>
+              <input type="text" id="dEdad" placeholder="Ej: 35 años" maxlength="40">
+            </div>
+            <div class="pf-field">
+              <label>Sexo</label>
+              <select id="dSexo"><option value="">No especifica</option><option value="varón">Varón</option><option value="mujer">Mujer</option></select>
+            </div>
+          </div>
+          <div class="pf-field">
+            <label>Descripción (ropa, señas particulares)</label>
+            <textarea id="dDescripcion" rows="2" placeholder="Ej: Camisa azul, pantalón jean, tatuaje en brazo..." maxlength="500"></textarea>
+          </div>
+          <div class="pf-row">
+            <div class="pf-field" style="flex:2">
+              <label>📍 Última ubicación conocida</label>
+              <input type="text" id="dUltimaUbicacion" placeholder="Ej: Esquina de San Juan, Caracas">
+            </div>
+            <div class="pf-field" style="flex:0 0 auto">
+              <label>&nbsp;</label>
+              <button type="button" id="dGpsBtn" class="btn btn-outline" style="font-size:18px">📍</button>
+            </div>
+          </div>
+          <div class="pf-field">
+            <label>🕐 Última vez que lo vieron</label>
+            <input type="text" id="dUltimaVista" placeholder="Ej: 'Ayer a las 3pm' o 'Durante el terremoto'">
+          </div>
+          <div class="pf-row">
+            <div class="pf-field">
+              <label>📞 Tu teléfono de contacto</label>
+              <input type="text" id="dTelefono" placeholder="0412-..." maxlength="20">
+            </div>
+            <div class="pf-field">
+              <label>Reportado por</label>
+              <input type="text" id="dReportadoPor" placeholder="Tu nombre" maxlength="60">
+            </div>
+          </div>
+          <div class="pf-field">
+            <label>📝 Notas adicionales</label>
+            <textarea id="dNotas" rows="2" placeholder="Cualquier información que ayude a localizarlo..." maxlength="500"></textarea>
+          </div>
+          <div id="dFotoPreview" class="foto-preview">
+            <img id="dFotoImg">
+            <button type="button" id="dFotoRemove" class="btn btn-outline">✕ Quitar</button>
+          </div>
+          <button type="submit" class="btn btn-danger btn-block">🔍 Publicar búsqueda</button>
+          <p class="form-note">Todos pueden ver esta información. Si lo encontrás, marcá "Encontrado" después.</p>
+        </form>
+      </div>
+
+      <!-- Sección: ENCONTRÉ A ALGUIEN -->
+      <div class="desap-section">
+        <div class="desap-section-header" style="background:var(--success);color:#fff">
+          <span>🤝 Encontré a alguien</span>
+          <span>¿Tenés a alguien resguardado? Publicá sus datos</span>
+        </div>
+        <form id="encontradosForm" class="desap-form">
+          <div class="pf-row">
+            <div class="pf-field">
+              <label>Nombre (si se sabe o aproximado)</label>
+              <input type="text" id="eNombre" placeholder="Ej: 'Sra. María'" maxlength="80">
+            </div>
+            <div class="pf-field" style="flex:0 0 auto">
+              <label>Foto</label>
+              <button type="button" id="eFotoBtn" class="btn btn-outline" style="font-size:18px">📷</button>
+              <input type="file" id="eFotoInput" accept="image/*" capture="environment" style="display:none">
+            </div>
+          </div>
+          <div class="pf-row">
+            <div class="pf-field">
+              <label>Edad aproximada</label>
+              <input type="text" id="eEdad" placeholder="Ej: 'Adulto mayor'" maxlength="40">
+            </div>
+            <div class="pf-field">
+              <label>Sexo</label>
+              <select id="eSexo"><option value="">No especifica</option><option value="varón">Varón</option><option value="mujer">Mujer</option></select>
+            </div>
+          </div>
+          <div class="pf-field">
+            <label>📝 Descripción</label>
+            <textarea id="eDescripcion" rows="2" placeholder="Ropa, estado físico, señas particulares..." maxlength="500"></textarea>
+          </div>
+          <div class="pf-row">
+            <div class="pf-field" style="flex:2">
+              <label>📍 Dónde está ahora</label>
+              <input type="text" id="eUbicacion" placeholder="Ej: Casa de la Sra. Pérez, Los Palos Grandes">
+            </div>
+            <div class="pf-field" style="flex:0 0 auto">
+              <label>&nbsp;</label>
+              <button type="button" id="eGpsBtn" class="btn btn-outline" style="font-size:18px">📍</button>
+            </div>
+          </div>
+          <div class="pf-row">
+            <div class="pf-field">
+              <label>👤 Quién lo encontró (vos)</label>
+              <input type="text" id="eQuien" required placeholder="Tu nombre" maxlength="60">
+            </div>
+            <div class="pf-field">
+              <label>📞 Tu teléfono</label>
+              <input type="text" id="eTelefono" placeholder="0412-..." maxlength="20">
+            </div>
+          </div>
+          <div class="pf-field">
+            <label>📝 Notas</label>
+            <textarea id="eNotas" rows="2" placeholder="Estado de salud, necesidades..." maxlength="500"></textarea>
+          </div>
+          <div id="eFotoPreview" class="foto-preview">
+            <img id="eFotoImg">
+            <button type="button" id="eFotoRemove" class="btn btn-outline">✕ Quitar</button>
+          </div>
+          <button type="submit" class="btn btn-success btn-block">🤝 Publicar — encontré a esta persona</button>
+          <p class="form-note">Si alguien la reconoce, se van a contactar con vos.</p>
+        </form>
+      </div>
+
+      <!-- Lista combinada: desaparecidos + encontrados -->
+      <div class="desap-results">
+        <div class="desap-tabs">
+          <button class="desap-tab-btn active" data-desap="desaparecidos">🔍 Buscados</button>
+          <button class="desap-tab-btn" data-desap="encontrados">🤝 Encontrados</button>
+        </div>
+        <div class="desap-toolbar">
+          <input type="text" id="desapSearch" placeholder="🔍 Buscar por nombre..." class="personas-search">
+        </div>
+        <div id="desaparecidosList"><div class="feed-loading">Cargando...</div></div>
+      </div>
+    </div>
+  </div>
+
+  <!-- TAB: INFO (Guía + Directorio) -->
+  <div id="tab-info" class="tab-content">
+    <div id="infoContainer">
+      <!-- ====== GUÍA DE SUPERVIVENCIA ====== -->
+      <div class="info-section">
+        <div class="info-hero" style="background:linear-gradient(135deg,#c0392b,#e74c3c);color:#fff;padding:20px 18px;text-align:center">
+          <div style="font-size:48px;margin-bottom:8px">🆘</div>
+          <h2 style="font-size:22px;font-weight:800;margin-bottom:4px">Guía rápida de emergencia</h2>
+          <p style="font-size:14px;opacity:0.9">Acciones esenciales ante el terremoto</p>
+        </div>
+        <div class="info-steps">
+          <div class="info-step">
+            <div class="info-step-num">1</div>
+            <div class="info-step-content">
+              <div class="info-step-title">PONETE A SALVO</div>
+              <div class="info-step-desc">Alejate de estructuras dañadas, vidrios y postes. Pueden venir réplicas. Si estás dentro, buscá una mesa firme y cubrite la cabeza.</div>
+            </div>
+          </div>
+          <div class="info-step">
+            <div class="info-step-num" style="background:#27ae60">2</div>
+            <div class="info-step-content">
+              <div class="info-step-title">REVISÁ A TU FAMILIA</div>
+              <div class="info-step-desc">Verificá si vos y los tuyos están heridos. Aplicá primeros auxilios básicos. No muevas a personas con lesiones de columna.</div>
+            </div>
+          </div>
+          <div class="info-step">
+            <div class="info-step-num" style="background:#f39c12">3</div>
+            <div class="info-step-content">
+              <div class="info-step-title">CORTÁ GAS Y LUZ</div>
+              <div class="info-step-desc">Si olés gas, cerrá la llave principal y no enciendas nada. Cortá la electricidad si ves cables sueltos o chispas.</div>
+            </div>
+          </div>
+          <div class="info-step">
+            <div class="info-step-num" style="background:#3498db">4</div>
+            <div class="info-step-content">
+              <div class="info-step-title">NO USES ASCENSORES</div>
+              <div class="info-step-desc">Bajá por las escaleras con cuidado. Mantenete a la derecha para que rescatistas puedan subir.</div>
+            </div>
+          </div>
+          <div class="info-step">
+            <div class="info-step-num" style="background:#9b59b6">5</div>
+            <div class="info-step-content">
+              <div class="info-step-title">AVISÁ QUE ESTÁS A SALVO</div>
+              <div class="info-step-desc">Usá un solo mensaje de texto o WhatsApp (no llames: saturás la red). <strong>Registrate acá mismo</strong> en la pestaña 👥 PERSONAS.</div>
+            </div>
+          </div>
+          <div class="info-step">
+            <div class="info-step-num" style="background:#e67e22">6</div>
+            <div class="info-step-content">
+              <div class="info-step-title">PREPARÁ TU KIT DE EMERGENCIA</div>
+              <div class="info-step-desc">Tené a mano: agua, linterna, pilas, medicinas, silbato, dinero en efectivo y tus documentos en una bolsa sellada.</div>
+            </div>
+          </div>
+          <div class="info-step">
+            <div class="info-step-num" style="background:#1abc9c">7</div>
+            <div class="info-step-content">
+              <div class="info-step-title">PUNTO DE ENCUENTRO FAMILIAR</div>
+              <div class="info-step-desc">Acordá con tu familia un punto de encuentro (una plaza, una iglesia, la casa de un vecino) por si se separan.</div>
+            </div>
+          </div>
+          <div class="info-step">
+            <div class="info-step-num" style="background:#e74c3c">8</div>
+            <div class="info-step-content">
+              <div class="info-step-title">NO DIFUNDAS RUMORES</div>
+              <div class="info-step-desc">Verificá antes de compartir. Usá fuentes oficiales: Protección Civil, Funvisis, USGS. Los rumores causan pánico y saturan los servicios.</div>
+            </div>
+          </div>
+          <div class="info-step">
+            <div class="info-step-num" style="background:#2ecc71">9</div>
+            <div class="info-step-content">
+              <div class="info-step-title">AYUDÁ A VECINOS VULNERABLES</div>
+              <div class="info-step-desc">Adultos mayores, niños y personas con discapacidad necesitan ayuda extra. Verificá que estén bien y reportalos si es necesario.</div>
+            </div>
+          </div>
+        </div>
+        <button class="btn btn-success btn-block" style="margin:12px 0 24px;border-radius:0;font-size:16px;padding:18px" onclick="app.shareGuiaWhatsApp()">📲 Compartir guía por WhatsApp</button>
+      </div>
+
+      <!-- ====== DIRECTORIO DE EMERGENCIA ====== -->
+      <div class="info-section">
+        <div class="info-hero" style="background:linear-gradient(135deg,#1a5276,#2980b9);color:#fff;padding:18px;text-align:center">
+          <div style="font-size:42px;margin-bottom:6px">📞</div>
+          <h2 style="font-size:20px;font-weight:800">Directorio de Emergencia</h2>
+          <p style="font-size:13px;opacity:0.9">Teléfonos organizados por categoría</p>
+        </div>
+
+        <!-- LÍNEAS DIRECTAS -->
+        <div class="info-dir-category">
+          <div class="info-dir-cat-header" style="background:#e74c3c">🆘 LÍNEAS DIRECTAS DE EMERGENCIA</div>
+          <div class="info-dir-grid">
+            <a href="tel:171" class="info-dir-item urgent">📞 <strong>171</strong> <span>Cantv (desde fijo)</span></a>
+            <a href="tel:*1" class="info-dir-item urgent">📞 <strong>*1</strong> <span>Movilnet</span></a>
+            <a href="tel:112" class="info-dir-item urgent">📞 <strong>112</strong> <span>Digitel</span></a>
+            <a href="tel:911" class="info-dir-item urgent">📞 <strong>911</strong> <span>Movistar</span></a>
+            <a href="tel:0800-SUMATRA" class="info-dir-item">📞 <strong>0800-SUMATRA</strong> <span>Protección Civil</span></a>
+          </div>
+        </div>
+
+        <!-- AMBULANCIAS -->
+        <div class="info-dir-category">
+          <div class="info-dir-cat-header" style="background:#27ae60">🚑 AMBULANCIAS</div>
+          <div class="info-dir-grid">
+            <a href="tel:02129932541" class="info-dir-item">✈️ Aeroambulancias <span>(0212) 993.25.41</span></a>
+            <a href="tel:02129928980" class="info-dir-item">✈️ Aeroambulancias <span>(0212) 992.89.80</span></a>
+            <a href="tel:02129928990" class="info-dir-item">✈️ Aeroambulancias <span>(0212) 992.89.90</span></a>
+            <a href="tel:02129917940" class="info-dir-item">✈️ Aeroambulancias <span>(0212) 991.79.40</span></a>
+            <a href="tel:02129936911" class="info-dir-item">🆘 Rescarven <span>(0212) 993.69.11</span></a>
+            <a href="tel:02129936991" class="info-dir-item">🆘 Rescarven <span>(0212) 993.69.91</span></a>
+            <a href="tel:02129931367" class="info-dir-item">🆘 Rescarven <span>(0212) 993.13.67</span></a>
+            <a href="tel:02129933367" class="info-dir-item">🆘 Rescarven <span>(0212) 993.33.67</span></a>
+            <a href="tel:02125454545" class="info-dir-item">🏥 S.A.M. Metropolitano <span>(0212) 545.45.45</span></a>
+            <a href="tel:02125454655" class="info-dir-item">🏥 S.A.M. Metropolitano <span>(0212) 545.46.55</span></a>
+            <a href="tel:02125779209" class="info-dir-item">🏥 S.A.M. Metropolitano <span>(0212) 577.92.09</span></a>
+          </div>
+        </div>
+
+        <!-- BOMBEROS -->
+        <div class="info-dir-category">
+          <div class="info-dir-cat-header" style="background:#f39c12">🧯 BOMBEROS</div>
+          <div class="info-dir-grid">
+            <a href="tel:02124722054" class="info-dir-item">Antímano <span>(0212) 472.20.54</span></a>
+            <a href="tel:02123519966" class="info-dir-item">Catia la Mar <span>(0212) 351.99.66</span></a>
+            <a href="tel:02122653261" class="info-dir-item">Chacao <span>(0212) 265.32.61</span></a>
+            <a href="tel:02129874334" class="info-dir-item">Del Este (Cafetal) <span>(0212) 987.43.34</span></a>
+            <a href="tel:02129855060" class="info-dir-item">Del Este <span>(0212) 985.50.60</span></a>
+            <a href="tel:02129853640" class="info-dir-item">Sucre <span>(0212) 985.36.40</span></a>
+            <a href="tel:02129852977" class="info-dir-item">El Cafetal <span>(0212) 985.29.77</span></a>
+            <a href="tel:02124810961" class="info-dir-item">El Paraíso <span>(0212) 481.09.61</span></a>
+            <a href="tel:02126720175" class="info-dir-item">El Valle <span>(0212) 672.01.75</span></a>
+            <a href="tel:02126720636" class="info-dir-item">El Valle <span>(0212) 672.06.36</span></a>
+            <a href="tel:02123327620" class="info-dir-item">La Guaira <span>(0212) 332.76.20</span></a>
+            <a href="tel:02123310445" class="info-dir-item">La Guaira <span>(0212) 331.04.45</span></a>
+            <a href="tel:02129434361" class="info-dir-item">La Trinidad <span>(0212) 943.43.61</span></a>
+            <a href="tel:02122416641" class="info-dir-item">La Urbina <span>(0212) 241.66.41</span></a>
+            <a href="tel:02125454545" class="info-dir-item">Metropolitanos <span>(0212) 545.45.45</span></a>
+            <a href="tel:02122356967" class="info-dir-item">Miranda <span>(0212) 235.69.67</span></a>
+            <a href="tel:02127930039" class="info-dir-item">Plaza Venezuela <span>(0212) 793.00.39</span></a>
+            <a href="tel:02127936457" class="info-dir-item">Plaza Venezuela <span>(0212) 793.64.57</span></a>
+            <a href="tel:02125779209" class="info-dir-item">San Bernardino <span>(0212) 577.92.09</span></a>
+          </div>
+        </div>
+
+        <!-- HOSPITALES -->
+        <div class="info-dir-category">
+          <div class="info-dir-cat-header" style="background:#3498db">🏥 HOSPITALES - Caracas</div>
+          <div class="info-dir-grid">
+            <a href="tel:02128707897" class="info-dir-item">H. José Gregorio Hernández (Los Magallanes) <span>(0212) 870.78.97</span></a>
+            <a href="tel:02124728472" class="info-dir-item">H. Miguel Pérez Carreño (Bella Vista) <span>(0212) 472.84.72</span></a>
+            <a href="tel:02124061241" class="info-dir-item">Hospital Militar (San Martín) <span>(0212) 406.12.41</span></a>
+            <a href="tel:02128702771" class="info-dir-item">H. Periférico de Catia <span>(0212) 870.27.71</span></a>
+            <a href="tel:02126811133" class="info-dir-item">H. Periférico de Coche <span>(0212) 681.11.33</span></a>
+            <a href="tel:02125415465" class="info-dir-item">Policlínica David Lobo (Santa Rosalía) <span>(0212) 541.54.65</span></a>
+            <a href="tel:02125501811" class="info-dir-item">Policlínica La Arboleda (San Bernardino) <span>(0212) 550.18.11</span></a>
+            <a href="tel:02129932323" class="info-dir-item">Policlínica Las Mercedes <span>(0212) 993.23.23</span></a>
+            <a href="tel:02127629025" class="info-dir-item">Policlínica Santiago de León (Sabana Grande) <span>(0212) 762.90.25</span></a>
+          </div>
+        </div>
+
+        <div style="padding:16px;font-size:12px;color:var(--text-muted);text-align:center;border-top:1px solid var(--border)">
+          ⚠️ Llamá SOLO si es una emergencia real. No satures las líneas.<br>
+          Fuente: RedAyuda Venezuela · Actualizado Jun 2026
+        </div>
       </div>
     </div>
   </div>
@@ -214,6 +551,8 @@
         <div class="stat-card"><span class="stat-num" id="statActivos">0</span><span>Activos</span></div>
         <div class="stat-card"><span class="stat-num" id="statColapsadas">0</span><span>Zonas Colapsadas</span></div>
         <div class="stat-card danger"><span class="stat-num" id="statRiesgo">0</span><span>Edificios Riesgo</span></div>
+        <div class="stat-card danger"><span class="stat-num" id="statSeguridad">0</span><span>Saqueos</span></div>
+        <div class="stat-card"><span class="stat-num" id="statServicios">0</span><span>Servicios</span></div>
       </div>
       <h3>Filtros</h3>
       <div class="filter-group">
@@ -225,6 +564,9 @@
           <label class="filter-item"><input type="checkbox" id="filterFeed" checked><span>📰 Incidencias Feed</span></label>
           <label class="filter-item"><input type="checkbox" id="filterRutas" checked><span>🛡️ Rutas Seguras</span></label>
           <label class="filter-item"><input type="checkbox" id="filterCentrosAyuda" checked><span>🏥 Centros de Ayuda</span></label>
+          <label class="filter-item"><input type="checkbox" id="filterSeguridad" checked><span>🚨 Saqueos / Inseguridad</span></label>
+          <label class="filter-item"><input type="checkbox" id="filterServicios" checked><span>🔧 Servicios Públicos</span></label>
+          <label class="filter-item"><input type="checkbox" id="filterHeatmap" checked><span>🔥 Mapa de Calor</span></label>
         </div>
         <h3>Reportar</h3>
       <div class="report-buttons">
@@ -232,16 +574,26 @@
         <button class="btn btn-danger" id="reportColapso">💥 Zona Colapsada</button>
         <button class="btn btn-warning" id="reportRiesgo">⚠️ Edificio Riesgo</button>
           <button class="btn btn-outline" id="reportSismo">⚡ Reportar Sismo</button>
+          <button class="btn btn-outline" id="reportSeguridad">🚨 Saqueos / Inseguridad</button>
+          <button class="btn btn-outline" id="reportServicio">🔧 Servicios Públicos</button>
           <button class="btn btn-success" id="reportRuta">🛡️ Marcar Ruta Segura</button>
           <button class="btn btn-primary" id="reportCentroAyuda">🏥 Reportar Centro de Ayuda</button>
         </div>
+        <button class="btn btn-outline btn-block" onclick="app.showMatches()" style="margin-bottom:12px" id="matchesBadge">🔗 Buscar coincidencias</button>
         <h3>Últimos Reportes</h3>
       <div id="recentReports"><p style="color:var(--text-muted);font-size:12px">Cargando...</p></div>
       <h3>Llamadas de Emergencia</h3>
       <div class="emergency-contacts">
         <a href="tel:911" class="contact-btn">911 Emergencias</a>
-        <a href="tel:0800-12345" class="contact-btn">0800-SUMATRA</a>
-        <a href="tel:0412-1234567" class="contact-btn">Protección Civil</a>
+        <a href="tel:112" class="contact-btn">112 Digitel</a>
+        <a href="tel:*1" class="contact-btn">*1 Movilnet</a>
+        <a href="tel:171" class="contact-btn">171 Cantv (fijo)</a>
+        <button class="btn btn-info btn-block" onclick="app.showInfoTab()" style="background:#2980b9;color:#fff;margin-top:4px">📋 Ver directorio completo</button>
+      </div>
+      <h3>Exportar Datos</h3>
+      <div class="export-buttons" style="display:flex;gap:6px;flex-wrap:wrap">
+        <button class="btn btn-outline" onclick="app.exportCSV()" style="flex:1;font-size:12px">📊 CSV</button>
+        <button class="btn btn-outline" onclick="app.exportGeoJSON()" style="flex:1;font-size:12px">🗺️ GeoJSON</button>
       </div>
     </div>
   </div>
@@ -261,6 +613,15 @@
         <div id="extraFields"></div>
         <label>Descripción</label><textarea id="fieldDescripcion" rows="3" placeholder="Describe la situación..."></textarea>
         <label>Contacto (opcional)</label><input type="text" id="fieldContacto" placeholder="Teléfono o red social">
+        <div class="media-picker-row">
+          <span style="font-size:12px;color:var(--text-muted);margin-bottom:4px">📎 Adjuntar evidencia (opcional)</span>
+          <div class="media-picker-btns">
+            <button type="button" class="btn btn-outline media-btn" onclick="app.pickMedia('imagen')" title="Foto">📷 Foto</button>
+            <button type="button" class="btn btn-outline media-btn" onclick="app.pickMedia('video')" title="Video">🎥 Video</button>
+            <button type="button" class="btn btn-outline media-btn" onclick="app.pickMedia('audio')" title="Audio">🎤 Audio</button>
+          </div>
+          <div id="mediaPreview" class="media-preview"></div>
+        </div>
         <label>🏷 Tipo de fuente</label><select id="fieldFuenteTipo">
           <option value="ciudadano" selected>👤 Ciudadano</option>
           <option value="medio">📰 Medio</option><option value="organismo">🔬 Organismo</option>
@@ -348,6 +709,7 @@
       </form>
       <p class="modal-note">Tu reporte aparece al instante para todos.</p>
     </div>
+  </div>
   <!-- LANGUAGE SELECTOR -->
   <div id="langMenu" class="hidden">
     <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:16px">
@@ -358,6 +720,7 @@
     <div class="lang-option" data-lang="en">🇺🇸 English</div>
     <div class="lang-option" data-lang="pt">🇧🇷 Português</div>
     <p style="font-size:11px;color:var(--text-muted);margin-top:12px;text-align:center">🇺🇳 Equipos de rescate internacional pueden cambiar el idioma</p>
+  </div>
   <!-- OCR / IMPORT MODAL -->
   <div id="ocrModal" class="modal hidden">
     <div class="modal-content">
@@ -385,6 +748,31 @@
     </div>
   </div>
 
+  <!-- SEARCH MODAL (Unified search across ALL tables) -->
+  <div id="searchModal" class="modal hidden">
+    <div class="modal-content" style="max-width:600px">
+      <div class="modal-header">
+        <h2>🔍 Buscar personas</h2>
+        <button class="icon-btn" id="closeSearchModal">✕</button>
+      </div>
+      <div id="searchBody" style="padding:14px 18px">
+        <div class="search-input-row" style="display:flex;gap:8px;margin-bottom:12px">
+          <input type="text" id="searchInput" placeholder="Escribí un nombre..." autocomplete="off" style="flex:1;padding:14px;background:var(--bg);border:2px solid var(--border);border-radius:var(--radius-sm);color:var(--text);font-size:18px;font-weight:600;min-height:52px;font-family:inherit">
+          <button id="searchPhotoBtn" class="btn btn-outline" style="padding:14px;font-size:20px;min-width:52px;min-height:52px" title="Subir foto">📷</button>
+        </div>
+        <input type="file" id="searchPhotoInput" accept="image/*" style="display:none">
+        <div id="searchPhotoPreview" style="display:none;margin-bottom:12px;text-align:center">
+          <img id="searchPhotoImg" style="max-width:120px;max-height:120px;border-radius:8px;border:3px solid var(--border)">
+          <p style="font-size:11px;color:var(--text-muted);margin-top:4px">📸 Foto subida — buscando coincidencias...</p>
+        </div>
+        <div id="searchResults" style="display:flex;flex-direction:column;gap:6px;max-height:50vh;overflow-y:auto;-webkit-overflow-scrolling:touch">
+          <div class="feed-empty">Escribí un nombre o subí una foto para buscar en todas las bases de datos.</div>
+        </div>
+        <p style="font-size:11px;color:var(--text-muted);text-align:center;margin-top:10px">🔍 Busca en: Personas · Desaparecidos · Encontrados · Hospitales · Niños</p>
+      </div>
+    </div>
+  </div>
+
   <!-- PERSONA DETAIL OVERLAY (for ?p=ID link) -->
   <div id="personaOverlay" class="modal hidden">
     <div class="modal-content">
@@ -399,9 +787,11 @@
   </div>
 </div>
 
+</div>
 <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+<script src="https://unpkg.com/leaflet.markercluster@1.5.3/dist/leaflet.markercluster.js"></script>
+<script src="https://unpkg.com/leaflet.heat@0.2.0/dist/leaflet-heat.js"></script>
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
-<script src="https://cdn.jsdelivr.net/npm/tesseract.js@5/dist/tesseract.min.js"></script>
 <script src="app.js"></script>
 </body>
 </html>

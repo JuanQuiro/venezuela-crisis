@@ -1,0 +1,4 @@
+#Fri Jun 26 23:55:17 VET 2026
+base.0=C\:\\src\\venezuela-crisis\\android\\app\\build\\intermediates\\dex\\release\\minifyReleaseWithR8\\classes.dex
+renamed.0=classes.dex
+path.0=classes.dex

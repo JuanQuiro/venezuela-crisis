@@ -1,7 +1,7 @@
 {
   "name": "venezuela-crisis",
   "version": "1.0.0",
-  "description": "Sistema de gestión de centros de acopio y evaluación de daños - Terremoto Venezuela",
+  "description": "Plataforma ciudadana de respuesta al terremoto - Centros acopio, reportes de daños, saqueos, servicios, personas, desaparecidos, ayuda humanitaria, chat, mapa interactivo",
   "main": "server.js",
   "scripts": {
     "start": "node server.js",

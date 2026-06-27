@@ -1,0 +1,10 @@
+node_modules
+android
+.gradle
+build
+app
+gradle
+scripts
+data
+*.apk
+*.aab
