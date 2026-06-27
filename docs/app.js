@@ -475,10 +475,10 @@
           ${p.notas ? `<div class="persona-notes">${p.notas}</div>` : ''}
           <div class="persona-time">${t}</div>
         </div>
-        ${p.telefono || p.ubicacion_texto ? `<div style="display:flex;gap:4px;flex-shrink:0;align-self:center;flex-direction:column">
-          <button class="btn btn-outline" style="padding:4px 8px;font-size:10px" onclick="shareWhatsApp('${p.nombre.replace(/'/g,"\\'")}','${(STATUS_PERSONA[p.status]||{label:''}).label}','${(p.ubicacion_texto||'').replace(/'/g,"\\'")}','${(p.telefono||'').replace(/'/g,"\\'")}')">📲 WhatsApp</button>
-          <button class="btn btn-outline" style="padding:4px 8px;font-size:10px" onclick="copiarLink(${p.id})">🔗 Link</button>
-        </div>` : ''}
+        <div class="persona-share">
+          <button class="btn btn-outline" onclick="app.shareWhatsApp(${p.id},'${(p.nombre||'').replace(/'/g,"\\'")}','${(STATUS_PERSONA[p.status]||{label:''}).label}','${(p.ubicacion_texto||'').replace(/'/g,"\\'")}','${(p.telefono||'').replace(/'/g,"\\'")}')">📲 WhatsApp</button>
+          <button class="btn btn-outline" onclick="app.copiarLink(${p.id})">🔗 Link</button>
+        </div>
       </div>`;
     }).join('');
     // Append hospital matches for family search
@@ -518,14 +518,34 @@
     if (!nombre) return alert('El nombre es obligatorio.');
     let lat = null, lng = null;
     if (typeof pendingLat !== 'undefined' && pendingLat !== null) { lat = pendingLat; lng = pendingLng; }
-    const { error } = await sb.from('personas').insert({ nombre, status, lat, lng, ubicacion_texto, telefono, notas, necesidades, foto: foto||null });
+    const { data: inserted, error } = await sb.from('personas').insert({ nombre, status, lat, lng, ubicacion_texto, telefono, notas, necesidades, foto: foto||null }).select().single();
     if (error) return alert('❌ Error: '+error.message);
     document.getElementById('personasForm').reset();
     document.getElementById('pFotoPreview').style.display = 'none';
     document.getElementById('pFotoImg').src = '';
     pendingLat = null; pendingLng = null;
     document.getElementById('pGpsBtn').style.borderColor = 'var(--border)';
-    alert('✅ Te registraste. Tus seres queridos pueden encontrarte ahora.');
+    // Show inline success with share buttons
+    if (inserted) {
+      const st = STATUS_PERSONA[inserted.status]||STATUS_PERSONA.bien;
+      const link = window.location.origin + window.location.pathname + '?p=' + inserted.id;
+      const successEl = document.createElement('div');
+      successEl.id = 'pSuccessMsg';
+      successEl.style.cssText = 'background:var(--bg-card);border-radius:var(--radius-sm);padding:16px;margin-top:10px;border-left:4px solid #27ae60;animation:slideUp 0.3s ease';
+      successEl.innerHTML = `
+        <div style="font-size:16px;font-weight:700;color:#27ae60;margin-bottom:8px">✅ ¡Te registraste con éxito!</div>
+        <div style="font-size:13px;color:var(--text-muted);margin-bottom:10px">Compartí tu link para que tus familiares te encuentren:</div>
+        <div style="display:flex;gap:6px;margin-bottom:8px">
+          <input type="text" value="${link}" readonly style="flex:1;padding:10px;background:var(--bg);border:2px solid var(--border);border-radius:var(--radius-sm);color:var(--text);font-size:13px;font-family:inherit" onclick="this.select()">
+          <button class="btn btn-primary" style="padding:10px 14px;font-size:13px;min-height:44px" onclick="app.copiarLink(${inserted.id})">📋 Copiar</button>
+        </div>
+        <button class="btn btn-success btn-block" style="font-size:14px" onclick="app.shareWhatsApp(${inserted.id},'${(nombre||'').replace(/'/g,"\\'")}','${st.label}','${(ubicacion_texto||'').replace(/'/g,"\\'")}','${(telefono||'').replace(/'/g,"\\'")}')">📲 Compartir en WhatsApp</button>
+      `;
+      const existing = document.getElementById('pSuccessMsg');
+      if (existing) existing.remove();
+      document.getElementById('personasForm').after(successEl);
+      setTimeout(() => { const el = document.getElementById('pSuccessMsg'); if (el) el.remove(); }, 15000);
+    }
   }
 
   function handlePersonaPhoto() {
@@ -540,9 +560,10 @@
     reader.readAsDataURL(file);
   }
 
-  function shareWhatsApp(nombre, status, ubicacion, telefono) {
+  function shareWhatsApp(id, nombre, status, ubicacion, telefono) {
+    const link = window.location.origin + window.location.pathname + '?p=' + id;
     const msg = encodeURIComponent(
-      `🚨 BÚSQUEDA - Terremoto Venezuela\n\nNombre: ${nombre}\nEstado: ${status}\n${ubicacion ? '📍 '+ubicacion : ''}\n${telefono ? '📞 '+telefono : ''}\n\nAbrí el mapa de crisis: https://venezuelacrisis.vercel.app/?buscar=${encodeURIComponent(nombre)}`
+      `🚨 BÚSQUEDA - Terremoto Venezuela\n\nNombre: ${nombre}\nEstado: ${status}\n${ubicacion ? '📍 '+ubicacion : ''}\n${telefono ? '📞 '+telefono : ''}\n\n🔗 ${link}`
     );
     window.open(`https://wa.me/?text=${msg}`, '_blank');
   }
