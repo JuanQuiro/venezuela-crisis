@@ -341,10 +341,8 @@
     const { error } = await sb.from('personas').insert({ nombre, status, lat, lng, ubicacion_texto, telefono, notas, necesidades, foto: foto||null });
     if (error) return alert('❌ Error: '+error.message);
     document.getElementById('personasForm').reset();
-    document.getElementById('personasForm').style.display = 'none';
     document.getElementById('pFotoPreview').style.display = 'none';
     document.getElementById('pFotoImg').src = '';
-    document.getElementById('personasFormToggle').innerHTML = '➕ Registrarme <span style="color:var(--text-muted);font-size:10px">— tocá para llenar</span>';
     pendingLat = null; pendingLng = null;
     document.getElementById('pGpsBtn').style.borderColor = 'var(--border)';
     alert('✅ Te registraste. Tus seres queridos pueden encontrarte ahora.');
@@ -803,12 +801,6 @@
     });
 
     /* Personas events */
-    $('personasFormToggle').addEventListener('click', function() {
-      const form = document.getElementById('personasForm');
-      const isHidden = form.style.display === 'none';
-      form.style.display = isHidden ? 'flex' : 'none';
-      this.innerHTML = isHidden ? '✕ Cerrar formulario' : '➕ Registrarme <span style="color:var(--text-muted);font-size:10px">— tocá para llenar</span>';
-    });
     $('pFotoBtn').addEventListener('click', ()=>$('pFotoInput').click());
     $('pFotoInput').addEventListener('change', handlePersonaPhoto);
     $('pFotoRemove').addEventListener('click', function() {
