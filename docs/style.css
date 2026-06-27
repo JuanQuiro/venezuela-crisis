@@ -239,6 +239,19 @@ html, body { height: 100%; font-family: -apple-system,BlinkMacSystemFont,'Segoe 
 .lang-option:hover { background: var(--bg-card); }
 .lang-option.active { background: var(--bg-card); border: 2px solid var(--primary); }
 
+/* ========== OCR MODAL ========== */
+#ocrBody textarea { width: 100%; padding: 12px; background: var(--bg); border: 2px solid var(--border); border-radius: var(--radius-sm); color: var(--text); font-size: 14px; font-family: inherit; resize: vertical; margin-top: 4px; }
+#ocrBody textarea:focus { outline: none; border-color: var(--primary); }
+
+/* ========== PERSONA OVERLAY ========== */
+#personaOverlay .modal-content { max-width: 480px; }
+#personaDetailBody a { transition: opacity 0.15s; }
+#personaDetailBody a:active { opacity: 0.7; }
+
+/* ========== PERSONA SHARE BUTTONS ========== */
+.persona-share { display: flex; gap: 4px; flex-shrink: 0; align-self: center; flex-direction: column; }
+.persona-share .btn { padding: 4px 8px; font-size: 10px; min-height: 32px; }
+
 /* ========== RESPONSIVE TWEAKS ========== */
 @media (min-width: 768px) {
   .modal { align-items: center; }

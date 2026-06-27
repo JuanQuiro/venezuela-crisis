@@ -12,6 +12,9 @@
 
   let rutasSeguras = [];
   let rutasLayer = null;
+  let centrosAyuda = [];
+  let centrosAyudaLayer = null;
+  let centrosAyudaSub = null;
 
   let feedData = [];
   let feedFilter = 'todas';
@@ -28,6 +31,7 @@
   let sismosMag = 'todas';
   let ayudaData = { atrapadas: [], hospitales: [], ninos: [], necesidades: [], mascotas: [], ayudantes: [] };
   let ayudaFilter = 'todas';
+  let currentPersonaId = null; // for ?p=ID routing
   let ayudaSubs = [];
 
   const FUENTES = { oficial:{label:'🏛 Gobierno/Oficial',color:'#3498db'}, organismo:{label:'🔬 Organismo Técnico',color:'#2ecc71'}, medio:{label:'📰 Medio',color:'#f39c12'}, ciudadano:{label:'👤 Ciudadano',color:'#95a5a6'}, otro:{label:'❓ Otra',color:'#7f8c8d'} };
@@ -471,7 +475,10 @@
           ${p.notas ? `<div class="persona-notes">${p.notas}</div>` : ''}
           <div class="persona-time">${t}</div>
         </div>
-        ${p.telefono || p.ubicacion_texto ? `<button class="btn btn-outline" style="padding:6px 10px;font-size:11px;flex-shrink:0;align-self:center" onclick="shareWhatsApp('${p.nombre.replace(/'/g,"\\'")}','${(STATUS_PERSONA[p.status]||{label:''}).label}','${(p.ubicacion_texto||'').replace(/'/g,"\\'")}','${(p.telefono||'').replace(/'/g,"\\'")}')">📲 Compartir</button>` : ''}
+        ${p.telefono || p.ubicacion_texto ? `<div style="display:flex;gap:4px;flex-shrink:0;align-self:center;flex-direction:column">
+          <button class="btn btn-outline" style="padding:4px 8px;font-size:10px" onclick="shareWhatsApp('${p.nombre.replace(/'/g,"\\'")}','${(STATUS_PERSONA[p.status]||{label:''}).label}','${(p.ubicacion_texto||'').replace(/'/g,"\\'")}','${(p.telefono||'').replace(/'/g,"\\'")}')">📲 WhatsApp</button>
+          <button class="btn btn-outline" style="padding:4px 8px;font-size:10px" onclick="copiarLink(${p.id})">🔗 Link</button>
+        </div>` : ''}
       </div>`;
     }).join('');
     // Append hospital matches for family search
@@ -538,6 +545,38 @@
       `🚨 BÚSQUEDA - Terremoto Venezuela\n\nNombre: ${nombre}\nEstado: ${status}\n${ubicacion ? '📍 '+ubicacion : ''}\n${telefono ? '📞 '+telefono : ''}\n\nAbrí el mapa de crisis: https://venezuelacrisis.vercel.app/?buscar=${encodeURIComponent(nombre)}`
     );
     window.open(`https://wa.me/?text=${msg}`, '_blank');
+  }
+
+  function showPersonaDetail(p) {
+    const overlay = document.getElementById('personaOverlay');
+    const body = document.getElementById('personaDetailBody');
+    if (!overlay || !body) return;
+    const st = STATUS_PERSONA[p.status]||STATUS_PERSONA.bien;
+    const foto = p.foto ? `<img src="${p.foto}" style="width:120px;height:120px;border-radius:50%;object-fit:cover;margin:0 auto 16px;display:block;border:4px solid ${st.color}">` : `<div style="width:120px;height:120px;border-radius:50%;background:var(--primary);color:#fff;display:flex;align-items:center;justify-content:center;font-size:48px;font-weight:800;margin:0 auto 16px;border:4px solid ${st.color}">${p.nombre.charAt(0).toUpperCase()}</div>`;
+    body.innerHTML = `
+      ${foto}
+      <h2 style="font-size:22px;text-align:center;margin-bottom:4px">${p.nombre}</h2>
+      <div style="text-align:center;margin-bottom:12px"><span class="persona-status" style="background:${st.color}22;color:${st.color};border:1px solid ${st.color}44;font-size:15px;padding:6px 16px">${st.label}</span></div>
+      ${p.ubicacion_texto ? `<div style="font-size:15px;color:var(--text-muted);text-align:center;margin-bottom:6px">📍 ${p.ubicacion_texto}</div>` : ''}
+      ${p.telefono ? `<div style="font-size:15px;text-align:center;margin-bottom:6px"><a href="tel:${p.telefono}" style="color:#3498db;text-decoration:none;font-weight:600">📞 ${p.telefono}</a></div>` : ''}
+      ${p.necesidades && p.necesidades.length ? `<div style="font-size:15px;color:var(--warning);text-align:center;margin-bottom:6px">🆘 Necesita: ${(Array.isArray(p.necesidades)?p.necesidades:[]).join(', ')}</div>` : ''}
+      ${p.notas ? `<div style="font-size:13px;color:var(--text-muted);font-style:italic;text-align:center;margin-bottom:12px">"${p.notas}"</div>` : ''}
+      <div style="font-size:11px;color:var(--text-muted);text-align:center">🕐 ${timeAgo(p.created_at)}</div>
+      <div style="display:flex;gap:8px;margin-top:16px">
+        ${p.telefono ? `<a href="tel:${p.telefono}" class="btn btn-primary" style="flex:1;font-size:14px">📞 Llamar</a>` : ''}
+        <button class="btn btn-outline" style="flex:1;font-size:14px" onclick="document.getElementById('personaOverlay').classList.add('hidden')">✕ Cerrar</button>
+      </div>
+    `;
+    overlay.classList.remove('hidden');
+  }
+
+  function copiarLink(id) {
+    const url = window.location.origin + window.location.pathname + '?p=' + id;
+    if (navigator.clipboard) {
+      navigator.clipboard.writeText(url).then(() => alert('✅ Link copiado: ' + url)).catch(() => alert('📋 ' + url));
+    } else {
+      alert('📋 ' + url);
+    }
   }
 
   /* ========== SISMOS TAB ========== */
@@ -622,6 +661,107 @@
     rutasLayer.addTo(map);
   }
 
+  async function loadCentrosAyuda() {
+    const { data } = await sb.from('centros_ayuda').select('*').order('id', { ascending: false }).limit(200);
+    centrosAyuda = data||[];
+    renderCentrosAyudaMap();
+    ayudaData.centros_ayuda = centrosAyuda;
+  }
+
+  function subscribeCentrosAyuda() {
+    if (centrosAyudaSub) centrosAyudaSub.unsubscribe();
+    centrosAyudaSub = sb.channel('centros-ayuda-cambios');
+    centrosAyudaSub.on('postgres_changes', { event: '*', schema: 'public', table: 'centros_ayuda' }, () => { loadCentrosAyuda(); });
+    centrosAyudaSub.subscribe();
+  }
+
+  function renderCentrosAyudaMap() {
+    if (!map) return;
+    if (centrosAyudaLayer) map.removeLayer(centrosAyudaLayer);
+    if ($('filterCentrosAyuda') && !$('filterCentrosAyuda').checked) return;
+    const markers = centrosAyuda.filter(c => c.lat && c.lng).map(c => {
+      const tipos = { agua:'🚰',comida:'🍲',medico:'🏥',refugio:'🏠',multiples:'🏪' };
+      const icon = L.divIcon({
+        className: 'custom-marker',
+        html: `<div style="background:#27ae60;width:32px;height:32px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:14px;border:2px solid #fff">${tipos[c.tipo]||'🏪'}</div>`,
+        iconSize: [32,32], iconAnchor: [16,16]
+      });
+      return L.marker([c.lat, c.lng], { icon }).bindPopup(`<div class="popup-content"><h3>${c.nombre}</h3><p>${c.direccion||''}</p><p>${c.horario?'🕐 '+c.horario:''} ${c.contacto?'📞 '+c.contacto:''}</p><p style="font-size:11px;color:var(--text-muted)">${c.verificada?'✅ Verificado · ':''}👤 ${c.reportado_por||'Anónimo'}</p></div>`);
+    });
+    centrosAyudaLayer = L.layerGroup(markers);
+    centrosAyudaLayer.addTo(map);
+  }
+
+  function renderCentroAyudaCard(c) {
+    const tipos = { agua:'🚰',comida:'🍲',medico:'🏥',refugio:'🏠',multiples:'🏪' };
+    return `<div class="ayuda-card-item" style="border-left:4px solid #27ae60">
+      <div class="ayuda-card-header">
+        <span class="feed-cat" style="background:#27ae60;color:#fff">${tipos[c.tipo]||'🏪'} ${c.tipo||'multiples'}</span>
+        <span class="feed-time">${timeAgo(c.created_at)}</span>
+      </div>
+      <div class="ayuda-card-title">${c.nombre}</div>
+      ${c.direccion ? `<div class="ayuda-card-desc">📍 ${c.direccion}</div>` : ''}
+      ${c.horario ? `<div class="ayuda-card-desc">🕐 ${c.horario}</div>` : ''}
+      <div class="feed-card-footer">${c.contacto?'📞 '+c.contacto:''}${c.verificada?' <span style="color:#27ae60;font-weight:600">✅ Verificado</span>':''} · 👤 ${c.reportado_por||'Anónimo'}</div>
+    </div>`;
+  }
+
+  function initOCR() {
+    const uploadBtn = document.getElementById('ocrUploadBtn');
+    const fileInput = document.getElementById('ocrFileInput');
+    const preview = document.getElementById('ocrPreview');
+    const img = document.getElementById('ocrImg');
+    const spinner = document.getElementById('ocrSpinner');
+    const result = document.getElementById('ocrResult');
+    const textarea = document.getElementById('ocrText');
+    const copyBtn = document.getElementById('ocrCopyBtn');
+    if (!uploadBtn) return;
+
+    uploadBtn.addEventListener('click', () => fileInput.click());
+
+    fileInput.addEventListener('change', async function() {
+      const file = this.files[0];
+      if (!file) return;
+      const reader = new FileReader();
+      reader.onload = async function(e) {
+        img.src = e.target.result;
+        preview.style.display = 'block';
+        spinner.style.display = 'block';
+        result.style.display = 'none';
+        try {
+          if (typeof Tesseract === 'undefined') {
+            textarea.value = '⚠️ Tesseract.js no se cargó. Verificá tu conexión a internet.';
+            spinner.style.display = 'none';
+            result.style.display = 'block';
+            return;
+          }
+          const { data } = await Tesseract.recognize(e.target.result, 'spa', {
+            logger: m => { if (m.status === 'recognizing text') uploadBtn.textContent = '🔍 Reconociendo... ' + Math.round(m.progress*100) + '%'; }
+          });
+          textarea.value = data.text;
+          uploadBtn.textContent = '📸 Elegir otra foto';
+          spinner.style.display = 'none';
+          result.style.display = 'block';
+        } catch(err) {
+          textarea.value = '❌ Error al procesar: ' + err.message;
+          spinner.style.display = 'none';
+          result.style.display = 'block';
+          uploadBtn.textContent = '📸 Elegir foto';
+        }
+      };
+      reader.readAsDataURL(file);
+    });
+
+    copyBtn.addEventListener('click', function() {
+      if (navigator.clipboard) {
+        navigator.clipboard.writeText(textarea.value).then(() => alert('✅ Texto copiado')).catch(() => alert('📋 Texto listo'));
+      } else {
+        textarea.select();
+        document.execCommand('copy');
+      }
+    });
+  }
+
   async function loadAyudaTable(key) {
     const { data } = await sb.from(AYUDA_CONFIG[key].table).select('*').order('id', { ascending: false }).limit(200);
     ayudaData[key] = data||[];
@@ -633,7 +773,7 @@
     const filters = document.getElementById('ayudaFilters');
     if (!grid) return;
     // Build action cards
-    grid.innerHTML = AYUDA_TABLES.map((key, i) => {
+    const gridCards = AYUDA_TABLES.map((key, i) => {
       const cfg = AYUDA_CONFIG[key];
       const count = ayudaData[key] ? ayudaData[key].filter(d => {
         // Count pending (not rescued/covered/reunified)
@@ -649,9 +789,22 @@
         ${count > 0 ? `<span class="ayuda-card-count">${count}</span>` : ''}
       </button>`;
     }).join('');
+    grid.innerHTML = gridCards +
+      `<button class="ayuda-card" onclick="openOcr()" style="border-color:#9b59b6">
+        <span class="ayuda-card-icon">📸</span>
+        <span class="ayuda-card-label">Foto a Texto</span>
+      </button>
+      <button class="ayuda-card" onclick="openReportCentroAyuda()" style="border-color:#27ae60">
+        <span class="ayuda-card-icon">🏥</span>
+        <span class="ayuda-card-label">Centro Ayuda</span>
+      </button>`;
     // Build filter pills
+    const ayudaKeysAll = [...AYUDA_TABLES, 'centros_ayuda'];
     const allFilters = [{key:'todas',icon:'📋',label:'Todas'}]
-      .concat(AYUDA_TABLES.map(k => ({key:k, icon:AYUDA_CONFIG[k].icon, label:AYUDA_CONFIG[k].label.replace(/^..\s/,'').split(' ')[0]})));
+      .concat(ayudaKeysAll.map(k => {
+        const cfg = AYUDA_CONFIG[k];
+        return {key:k, icon: cfg ? cfg.icon : '🏥', label: cfg ? cfg.label.replace(/^..\s/,'').split(' ')[0] : 'Centros'};
+      }));
     filters.innerHTML = allFilters.map(f =>
       `<button class="feed-filter ayuda-filter ${f.key===ayudaFilter?'active':''}" data-ayuda="${f.key}">${f.icon} ${f.label}</button>`
     ).join('');
@@ -665,7 +818,7 @@
     if (!el) return;
     let items = [];
     if (ayudaFilter === 'todas') {
-      AYUDA_TABLES.forEach(key => {
+      [...AYUDA_TABLES, 'centros_ayuda'].forEach(key => {
         (ayudaData[key]||[]).forEach(d => {
           items.push({ key, data: d });
         });
@@ -680,6 +833,7 @@
     }
     el.innerHTML = items.map(({key, data}) => {
       const fn = AYUDA_CONFIG[key] && AYUDA_CONFIG[key].render;
+      if (key === 'centros_ayuda') return renderCentroAyudaCard(data);
       return fn ? fn(data) : `<div class="ayuda-card-item">${JSON.stringify(data).slice(0,100)}</div>`;
     }).join('');
   }
@@ -1145,11 +1299,39 @@
     await loadPersonas(); subscribePersonas();
     await loadAyuda(); subscribeAyuda();
     await loadRutas();
+    // Check for ?p=ID parameter (persona sharing link)
+    const params = new URLSearchParams(window.location.search);
+    const pid = params.get('p');
+    if (pid) {
+      currentPersonaId = parseInt(pid);
+      if (!isNaN(currentPersonaId)) {
+        const { data } = await sb.from('personas').select('*').eq('id', currentPersonaId).single();
+        if (data) {
+          setTimeout(() => showPersonaDetail(data), 500);
+        }
+      }
+    }
+    await loadCentrosAyuda(); subscribeCentrosAyuda();
     setInterval(renderSismos, 30000);
     initTabs();
+    initOCR();
     window.app.detail = showDetail;
     window.app.denunciar = abrirDenuncia;
     window.app.shareWhatsApp = shareWhatsApp;
+    window.app.copiarLink = copiarLink;
+    window.app.openOcr = function() { $('ocrModal').classList.remove('hidden'); };
+    window.app.openReportCentroAyuda = function() {
+      const nombre = prompt('Nombre del centro de ayuda:')?.trim();
+      if (!nombre) return;
+      const tipo = prompt('Tipo (agua, comida, medico, refugio, multiples):') || 'multiples';
+      const dir = prompt('Dirección:')?.trim() || '';
+      const horario = prompt('Horario:')?.trim() || '';
+      const contacto = prompt('Contacto:')?.trim() || '';
+      sb.from('centros_ayuda').insert({ nombre, tipo, direccion: dir, horario, contacto }).then(({error}) => {
+        if (error) alert('❌ '+error.message);
+        else { alert('✅ Centro de ayuda reportado.'); loadCentrosAyuda(); }
+      });
+    };
   }
   document.addEventListener('DOMContentLoaded', init);
 
@@ -1183,6 +1365,20 @@
       sb.from('rutas_seguras').insert({ nombre, tipo, lat: pendingLat, lng: pendingLng, descripcion: desc }).then(({error}) => {
         if (error) alert('❌ '+error.message);
         else { alert('✅ Ruta reportada.'); loadRutas(); pendingLat=null; pendingLng=null; }
+      });
+    });
+    $('filterCentrosAyuda')?.addEventListener('change', function() { renderCentrosAyudaMap(); });
+    $('reportCentroAyuda')?.addEventListener('click', function() {
+      if (!pendingLat || !pendingLng) return alert('Primero hacé clic en el mapa para marcar la ubicación.');
+      const nombre = prompt('Nombre del centro de ayuda:')?.trim();
+      if (!nombre) return;
+      const tipo = prompt('Tipo (agua, comida, medico, refugio, multiples):') || 'multiples';
+      const dir = prompt('Dirección (opcional):')?.trim() || '';
+      const horario = prompt('Horario (opcional):')?.trim() || '';
+      const contacto = prompt('Contacto (opcional):')?.trim() || '';
+      sb.from('centros_ayuda').insert({ nombre, tipo, direccion: dir, horario, contacto, lat: pendingLat, lng: pendingLng }).then(({error}) => {
+        if (error) alert('❌ '+error.message);
+        else { alert('✅ Centro de ayuda reportado.'); loadCentrosAyuda(); pendingLat=null; pendingLng=null; }
       });
     });
     $('reportCentro').addEventListener('click', ()=>{ $('sidebar').classList.add('hidden'); showModal('centro'); });
@@ -1256,6 +1452,8 @@
       }
     });
     $('closeAyudaModal').addEventListener('click', () => $('ayudaModal').classList.add('hidden'));
+    $('closeOcrModal')?.addEventListener('click', () => { $('ocrModal').classList.add('hidden'); document.getElementById('ocrPreview').style.display = 'none'; document.getElementById('ocrFileInput').value = ''; });
+    $('closePersonaOverlay')?.addEventListener('click', () => $('personaOverlay').classList.add('hidden'));
     $('ayudaForm').addEventListener('submit', submitAyuda);
 
     /* Personas search + status filters */

@@ -224,6 +224,7 @@
         <label class="filter-item"><input type="checkbox" id="filterUSGS" checked><span>📡 USGS Tiempo Real</span></label>
           <label class="filter-item"><input type="checkbox" id="filterFeed" checked><span>📰 Incidencias Feed</span></label>
           <label class="filter-item"><input type="checkbox" id="filterRutas" checked><span>🛡️ Rutas Seguras</span></label>
+          <label class="filter-item"><input type="checkbox" id="filterCentrosAyuda" checked><span>🏥 Centros de Ayuda</span></label>
         </div>
         <h3>Reportar</h3>
       <div class="report-buttons">
@@ -232,8 +233,9 @@
         <button class="btn btn-warning" id="reportRiesgo">⚠️ Edificio Riesgo</button>
           <button class="btn btn-outline" id="reportSismo">⚡ Reportar Sismo</button>
           <button class="btn btn-success" id="reportRuta">🛡️ Marcar Ruta Segura</button>
+          <button class="btn btn-primary" id="reportCentroAyuda">🏥 Reportar Centro de Ayuda</button>
         </div>
-      <h3>Últimos Reportes</h3>
+        <h3>Últimos Reportes</h3>
       <div id="recentReports"><p style="color:var(--text-muted);font-size:12px">Cargando...</p></div>
       <h3>Llamadas de Emergencia</h3>
       <div class="emergency-contacts">
@@ -356,11 +358,50 @@
     <div class="lang-option" data-lang="en">🇺🇸 English</div>
     <div class="lang-option" data-lang="pt">🇧🇷 Português</div>
     <p style="font-size:11px;color:var(--text-muted);margin-top:12px;text-align:center">🇺🇳 Equipos de rescate internacional pueden cambiar el idioma</p>
+  <!-- OCR / IMPORT MODAL -->
+  <div id="ocrModal" class="modal hidden">
+    <div class="modal-content">
+      <div class="modal-header">
+        <h2>📸 Importar desde foto</h2>
+        <button class="icon-btn" id="closeOcrModal">✕</button>
+      </div>
+      <div id="ocrBody" style="padding:18px 22px">
+        <p style="font-size:14px;color:var(--text-muted);margin-bottom:12px">Subí una foto de una lista (personas, necesidades) y la IA extrae el texto. Revisalo antes de publicar.</p>
+        <button id="ocrUploadBtn" class="btn btn-primary btn-block">📸 Elegir foto</button>
+        <input type="file" id="ocrFileInput" accept="image/*" style="display:none">
+        <div id="ocrPreview" style="display:none;margin-top:12px">
+          <img id="ocrImg" style="max-width:100%;border-radius:8px;margin-bottom:10px">
+          <div id="ocrSpinner" style="display:none;text-align:center;padding:20px">
+            <div style="font-size:40px;margin-bottom:8px">🔍</div>
+            <div style="font-size:14px;color:var(--text-muted)">Procesando con IA... puede tomar unos segundos</div>
+          </div>
+          <div id="ocrResult" style="display:none">
+            <label style="font-size:12px;text-transform:uppercase;color:var(--text-muted);font-weight:600">Texto extraído</label>
+            <textarea id="ocrText" rows="6" style="width:100%;padding:10px;background:var(--bg);border:2px solid var(--border);border-radius:var(--radius-sm);color:var(--text);font-size:14px;font-family:inherit;margin-top:4px" readonly></textarea>
+            <button id="ocrCopyBtn" class="btn btn-outline btn-block" style="margin-top:8px">📋 Copiar texto</button>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- PERSONA DETAIL OVERLAY (for ?p=ID link) -->
+  <div id="personaOverlay" class="modal hidden">
+    <div class="modal-content">
+      <div class="modal-header">
+        <h2>👤 Persona</h2>
+        <button class="icon-btn" id="closePersonaOverlay">✕</button>
+      </div>
+      <div id="personaDetailBody" style="padding:18px 22px">
+        <div style="text-align:center;padding:30px;color:var(--text-muted)">Cargando...</div>
+      </div>
+    </div>
   </div>
 </div>
 
 <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<script src="https://cdn.jsdelivr.net/npm/tesseract.js@5/dist/tesseract.min.js"></script>
 <script src="app.js"></script>
 </body>
 </html>
