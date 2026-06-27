@@ -91,69 +91,8 @@
   <!-- TAB: PERSONAS -->
   <div id="tab-personas" class="tab-content">
     <div id="personasContainer">
-      <div class="personas-form">
-        <div class="personas-form-header collapsed" id="personasFormToggle">
-          <div>
-            <div style="font-size:16px;font-weight:700">🙋 Registrate para que te encuentren</div>
-            <div style="font-size:12px;color:var(--text-muted);font-weight:400;margin-top:2px">Rescatistas y familiares ven tus datos al instante</div>
-          </div>
-        </div>
-        <form id="personasForm">
-          <div class="pf-row">
-            <div class="pf-field" style="flex:1">
-              <label>Nombre</label>
-              <input type="text" id="pNombre" required placeholder="Tu nombre" maxlength="80">
-            </div>
-            <div class="pf-field" style="flex:0 0 auto">
-              <label>Foto</label>
-              <button type="button" id="pFotoBtn" class="btn btn-outline">📷</button>
-              <input type="file" id="pFotoInput" accept="image/*" capture="environment" style="display:none">
-            </div>
-          </div>
-          <div class="pf-field">
-            <label>Estado</label>
-            <select id="pStatus">
-              <option value="bien">✅ Estoy bien</option>
-              <option value="herido">🆘 Estoy herido/a — necesito ayuda</option>
-              <option value="buscando_familiares">🔍 Buscando familiares</option>
-              <option value="necesita_medicamentos">💊 Necesito medicamentos</option>
-              <option value="voluntario">🙋 Soy voluntario</option>
-            </select>
-          </div>
-          <div class="pf-row">
-            <div class="pf-field" style="flex:2">
-              <label>Ubicación</label>
-              <input type="text" id="pUbicacion" placeholder="¿Dónde estás?">
-            </div>
-            <div class="pf-field" style="flex:0 0 auto">
-              <label>&nbsp;</label>
-              <button type="button" id="pGpsBtn" class="btn btn-outline">📍</button>
-            </div>
-          </div>
-          <div class="pf-row">
-            <div class="pf-field" style="flex:1">
-              <label>Teléfono</label>
-              <input type="text" id="pTelefono" placeholder="0412-..." maxlength="20">
-            </div>
-            <div class="pf-field" style="flex:1">
-              <label>Necesito (coma)</label>
-              <input type="text" id="pNecesidades" placeholder="agua, comida, medicinas">
-            </div>
-          </div>
-          <div class="pf-field">
-            <label>Notas</label>
-            <textarea id="pNotas" rows="2" placeholder="Información adicional..." maxlength="500"></textarea>
-          </div>
-          <div id="pFotoPreview" style="display:none;margin-bottom:6px">
-            <img id="pFotoImg" style="max-width:100px;max-height:100px;border-radius:8px">
-            <button type="button" id="pFotoRemove" class="btn btn-outline" style="padding:6px 12px;font-size:12px">✕ Quitar</button>
-          </div>
-          <button type="submit" class="btn btn-primary btn-block">✅ Registrarme</button>
-          <p style="font-size:10px;color:var(--text-muted);margin-top:4px">Tu ubicación se usa para que tus familiares te encuentren.</p>
-        </form>
-      </div>
-
       <div class="personas-toolbar">
+        <input type="text" id="personasSearch" placeholder="🔍 Buscar por nombre..." class="personas-search">
         <input type="text" id="personasSearch" placeholder="🔍 Buscar por nombre..." class="personas-search">
         <div class="personas-status-filters">
           <button class="ps-filter active" data-ps="todas">Todas</button>
@@ -663,6 +602,68 @@
         <button type="submit" class="btn btn-primary btn-block">📰 Publicar Incidencia</button>
       </form>
       <p class="modal-note">La incidencia aparece al instante en el feed y en el mapa.</p>
+    </div>
+  </div>
+
+  <div id="personasModal" class="modal hidden">
+    <div class="modal-content">
+      <div class="modal-header">
+        <h2>🙋 Registrate</h2>
+        <button class="icon-btn" id="closePersonasModal">✕</button>
+      </div>
+      <form id="personasForm">
+        <div class="pf-row">
+          <div class="pf-field" style="flex:1">
+            <label>Nombre</label>
+            <input type="text" id="pNombre" required placeholder="Tu nombre" maxlength="80">
+          </div>
+          <div class="pf-field" style="flex:0 0 auto">
+            <label>Foto</label>
+            <button type="button" id="pFotoBtn" class="btn btn-outline">📷</button>
+            <input type="file" id="pFotoInput" accept="image/*" capture="environment" style="display:none">
+          </div>
+        </div>
+        <div class="pf-field">
+          <label>Estado</label>
+          <select id="pStatus">
+            <option value="bien">✅ Estoy bien</option>
+            <option value="herido">🆘 Estoy herido/a — necesito ayuda</option>
+            <option value="buscando_familiares">🔍 Buscando familiares</option>
+            <option value="necesita_medicamentos">💊 Necesito medicamentos</option>
+            <option value="voluntario">🙋 Soy voluntario</option>
+          </select>
+        </div>
+        <div class="pf-row">
+          <div class="pf-field" style="flex:2">
+            <label>Ubicación</label>
+            <input type="text" id="pUbicacion" placeholder="¿Dónde estás?">
+          </div>
+          <div class="pf-field" style="flex:0 0 auto">
+            <label>&nbsp;</label>
+            <button type="button" id="pGpsBtn" class="btn btn-outline">📍</button>
+          </div>
+        </div>
+        <div class="pf-row">
+          <div class="pf-field" style="flex:1">
+            <label>Teléfono</label>
+            <input type="text" id="pTelefono" placeholder="0412-..." maxlength="20">
+          </div>
+          <div class="pf-field" style="flex:1">
+            <label>Necesito (coma)</label>
+            <input type="text" id="pNecesidades" placeholder="agua, comida, medicinas">
+          </div>
+        </div>
+        <div class="pf-field">
+          <label>Notas</label>
+          <textarea id="pNotas" rows="3" placeholder="Información adicional..." maxlength="500"></textarea>
+        </div>
+        <div id="pFotoPreview" class="foto-preview">
+          <img id="pFotoImg">
+          <button type="button" id="pFotoRemove" class="btn btn-outline">✕ Quitar</button>
+        </div>
+        <button type="submit" class="btn btn-primary btn-block">✅ Registrarme</button>
+        <p class="form-note">Tu ubicación se usa para que tus familiares te encuentren. Compartí tu link después de registrarte.</p>
+      </form>
     </div>
   </div>
 

@@ -699,27 +699,9 @@
     document.getElementById('pFotoImg').src = '';
     pendingLat = null; pendingLng = null;
     document.getElementById('pGpsBtn').style.borderColor = 'var(--border)';
-    // Show inline success with share buttons
-    if (inserted) {
-      const st = STATUS_PERSONA[inserted.status]||STATUS_PERSONA.bien;
-      const link = window.location.origin + window.location.pathname + '?p=' + inserted.id;
-      const successEl = document.createElement('div');
-      successEl.id = 'pSuccessMsg';
-      successEl.style.cssText = 'background:var(--bg-card);border-radius:var(--radius-sm);padding:16px;margin-top:10px;border-left:4px solid #27ae60;animation:slideUp 0.3s ease';
-      successEl.innerHTML = `
-        <div style="font-size:16px;font-weight:700;color:#27ae60;margin-bottom:8px">✅ ¡Te registraste con éxito!</div>
-        <div style="font-size:13px;color:var(--text-muted);margin-bottom:10px">Compartí tu link para que tus familiares te encuentren:</div>
-        <div style="display:flex;gap:6px;margin-bottom:8px">
-          <input type="text" value="${link}" readonly style="flex:1;padding:10px;background:var(--bg);border:2px solid var(--border);border-radius:var(--radius-sm);color:var(--text);font-size:13px;font-family:inherit" onclick="this.select()">
-          <button class="btn btn-primary" style="padding:10px 14px;font-size:13px;min-height:44px" onclick="app.copiarLink(${inserted.id})">📋 Copiar</button>
-        </div>
-        <button class="btn btn-success btn-block" style="font-size:14px" onclick="app.shareWhatsApp(${inserted.id},'${(nombre||'').replace(/'/g,"\\'")}','${st.label}','${(ubicacion_texto||'').replace(/'/g,"\\'")}','${(telefono||'').replace(/'/g,"\\'")}')">📲 Compartir en WhatsApp</button>
-      `;
-      const existing = document.getElementById('pSuccessMsg');
-      if (existing) existing.remove();
-      document.getElementById('personasForm').after(successEl);
-      setTimeout(() => { const el = document.getElementById('pSuccessMsg'); if (el) el.remove(); }, 15000);
-    }
+    $('personasModal')?.classList.add('hidden');
+    showToast('✅ ¡Te registraste con éxito!', 'success');
+    await loadPersonas();
   }
 
   async function uploadPhoto(file, prefix = 'general') {
@@ -2424,14 +2406,14 @@
     $('closeDenuncia').addEventListener('click', ()=>$('denunciaModal').classList.add('hidden'));
     $('cancelDenuncia').addEventListener('click', ()=>$('denunciaModal').classList.add('hidden'));
     $('closeFeedModal').addEventListener('click', ()=>$('feedModal').classList.add('hidden'));
+    $('closePersonasModal')?.addEventListener('click', ()=>$('personasModal').classList.add('hidden'));
     $('reportForm').addEventListener('submit', handleSubmit);
     $('denunciaForm').addEventListener('submit', enviarDenuncia);
     $('feedForm').addEventListener('submit', submitFeed);
+    $('personasForm')?.addEventListener('submit', submitPersona);
     $('fabFeed').addEventListener('click', ()=>{ $('feedModal').classList.remove('hidden'); });
     $('fabPersonas')?.addEventListener('click', function() {
-      const toggle = $('personasFormToggle');
-      if (toggle) toggle.click();
-      $('personasList')?.scrollIntoView({ behavior: 'smooth', block: 'start' });
+      $('personasModal').classList.remove('hidden');
     });
     $('fabSismos')?.addEventListener('click', () => {
       $('sidebar').classList.add('hidden');
@@ -2472,12 +2454,6 @@
         this.style.borderColor = '#27ae60';
         showToast('📍 Ubicación capturada.', 'success');
       }, () => showToast('No se pudo obtener ubicación.', 'error'), { enableHighAccuracy: true });
-    });
-    $('personasFormToggle')?.addEventListener('click', function() {
-      const form = $('personasForm');
-      const isHidden = form.style.display === 'none' || !form.style.display;
-      form.style.display = isHidden ? 'flex' : 'none';
-      this.classList.toggle('collapsed', !isHidden);
     });
 
     /* Ayuda events */
